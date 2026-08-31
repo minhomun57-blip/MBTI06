@@ -1,343 +1,216 @@
 import streamlit as st
 import random
 
-# 페이지 설정 (다크 모드 기본)
+# 페이지 기본 설정
 st.set_page_config(
-    page_title="💀 붉은 저택의 위령제: 심연",
+    page_title="💀 붉은 저택: 자유 탐색",
     page_icon="🩸",
     layout="wide"
 )
 
-# 공포 분위기를 극대화하는 커스텀 CSS
+# 다크 테마 커스텀 CSS
 st.markdown("""
 <style>
     .stApp {
-        background: radial-gradient(circle, #1a0000 0%, #000000 100%);
-        color: #e0e0e0;
+        background-color: #050505;
+        color: #d1d1d1;
         font-family: 'Courier New', Courier, monospace;
     }
-
     .horror-title {
-        font-size: 3rem;
-        font-weight: 900;
+        font-size: 2.5rem;
+        font-weight: bold;
         color: #ff0000;
         text-align: center;
-        text-shadow: 0 0 10px #ff0000, 0 0 20px #8b0000;
-        animation: glitch 1s infinite alternate;
+        text-shadow: 0 0 10px #ff0000;
     }
-
-    @keyframes glitch {
-        0% { transform: translate(0); }
-        20% { transform: translate(-2px, 2px); }
-        40% { transform: translate(-2px, -2px); }
-        60% { transform: translate(2px, 2px); }
-        80% { transform: translate(2px, -2px); }
-        100% { transform: translate(0); }
-    }
-
-    .horror-sub {
-        font-size: 1.1rem;
-        color: #a9a9a9;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-
-    .status-box {
-        background-color: #0d0d0d;
-        border: 2px solid #8b0000;
+    .status-panel {
+        background-color: #111111;
+        border: 2px solid #550000;
         padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        border-radius: 8px;
+        margin-bottom: 15px;
     }
-
-    .story-box {
-        background-color: #050505;
-        border-left: 5px solid #ff0000;
-        padding: 20px;
-        font-size: 1.1rem;
-        line-height: 1.6;
-        margin-bottom: 20px;
-        animation: blinker 2.5s linear infinite;
+    .control-panel {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        padding: 15px;
+        border-radius: 8px;
     }
-
-    @keyframes blinker {
-        50% { opacity: 0.7; }
-    }
-
     .stButton>button {
         width: 100%;
-        background-color: #2b0000;
+        background-color: #330000;
         color: #ffffff;
         border: 1px solid #ff0000;
-        font-size: 1.1rem;
-        padding: 10px;
-        transition: all 0.3s ease;
+        font-weight: bold;
     }
-
     .stButton>button:hover {
         background-color: #ff0000;
         color: #000000;
-        font-weight: bold;
-        box-shadow: 0 0 15px #ff0000;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 게임 상태 초기화
-if 'game_started' not in st.session_state:
-    st.session_state.game_started = False
+# 맵 구조 정의 (5x5 크기 지도)
+MAP_GRID = {
+    (0, 0): {"name": "🔒 현관문 (출구)", "item": None, "desc": "쇠사슬로 잠긴 현관문입니다. 탈출하려면 4개의 신성한 도구가 필요합니다."},
+    (0, 1): {"name": "어두운 복도 동쪽", "item": None, "desc": "스산한 바람이 불어오는 길고 어두운 복도입니다."},
+    (0, 2): {"name": "🕯️ 제단실", "item": "고대의 부적", "desc": "붉은 양초가 켜진 제단입니다. 의식용 문양이 그려져 있습니다."},
+    (1, 0): {"name": "어두운 복도 남쪽", "item": None, "desc": "발걸음 소리가 울려 퍼지는 복도입니다."},
+    (1, 1): {"name": "🏚️ 낡은 거실", "item": None, "desc": "찢어진 소파와 부서진 가구들이 널브러져 있습니다."},
+    (1, 2): {"name": "📚 서재", "item": "녹슨 열쇠", "desc": "오래된 책들이 쌓여 있습니다. 먼지가 자욱합니다."},
+    (2, 0): {"name": "🍽️ 식당", "item": "의식용 소금", "desc": "악취가 나는 식탁이 놓여 있습니다."},
+    (2, 1): {"name": "🍷 침실", "item": "은빛 십자가", "desc": "피로 물든 침대가 보입니다."},
+    (2, 2): {"name": "🕸️ 지하실 입구", "item": None, "desc": "지하로 내려가는 계단입니다. 깊은 어둠이 깔려 있습니다."}
+}
+
+# 세션 상태 초기화
+if 'player_x' not in st.session_state:
+    st.session_state.player_x = 1
+if 'player_y' not in st.session_state:
+    st.session_state.player_y = 1
 if 'stamina' not in st.session_state:
     st.session_state.stamina = 100
 if 'inventory' not in st.session_state:
     st.session_state.inventory = []
-if 'current_room' not in st.session_state:
-    st.session_state.current_room = "현관"
-if 'current_ghost' not in st.session_state:
-    st.session_state.current_ghost = None
+if 'searched_pos' not in st.session_state:
+    st.session_state.searched_pos = []
+if 'ghost_spawned' not in st.session_state:
+    st.session_state.ghost_spawned = False
 if 'game_over' not in st.session_state:
     st.session_state.game_over = False
 if 'escaped' not in st.session_state:
     st.session_state.escaped = False
 
-# 귀신 데이터베이스
-GHOST_TYPES = {
-    "처녀귀신": {
-        "name": "🕸️ 소박을 맞고 죽은 원혼",
-        "desc": "긴 머리채를 늘어뜨린 채 피눈물을 흘리며 울부짖고 있습니다. 눈을 마주치면 정신이 아득해집니다.",
-        "image": "https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=800&q=80",
-        "correct_action": "눈 감고 기도하기",
-        "damage": 30
-    },
-    "기어다니는원혼": {
-        "name": "🕷️ 기괴하게 꺾인 자",
-        "desc": "관절이 기괴하게 꺾인 채 벽과 천장을 빠르게 기어다닙니다! 소리에 매우 민감합니다.",
-        "image": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
-        "correct_action": "숨죽이고 재빨리 숨기",
-        "damage": 40
-    },
-    "거울속환영": {
-        "name": "🪞 형체 없는 거울 속 환영",
-        "desc": "당신의 얼굴을 한 무언가가 거울 속에서 비웃으며 손을 내밀고 있습니다.",
-        "image": "https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=800&q=80",
-        "correct_action": "거울을 깨뜨리기",
-        "damage": 25
-    }
-}
-
 # 리셋 함수
 def restart_game():
-    st.session_state.game_started = True
+    st.session_state.player_x = 1
+    st.session_state.player_y = 1
     st.session_state.stamina = 100
     st.session_state.inventory = []
-    st.session_state.current_room = "현관"
-    st.session_state.current_ghost = None
+    st.session_state.searched_pos = []
+    st.session_state.ghost_spawned = False
     st.session_state.game_over = False
     st.session_state.escaped = False
 
-# 귀신 스폰 로직
-def check_ghost_spawn():
-    if st.session_state.current_room != "현관" and random.random() < 0.45:
-        ghost_key = random.choice(list(GHOST_TYPES.keys()))
-        st.session_state.current_ghost = GHOST_TYPES[ghost_key]
+# 이동 처리 함수
+def move_player(dx, dy):
+    new_x = st.session_state.player_x + dx
+    new_y = st.session_state.player_y + dy
+    if (new_x, new_y) in MAP_GRID:
+        st.session_state.player_x = new_x
+        st.session_state.player_y = new_y
+        
+        # 이동 시 30% 확률로 귀신 조우
+        if random.random() < 0.3 and (new_x, new_y) != (0, 0):
+            st.session_state.ghost_spawned = True
+        else:
+            st.session_state.ghost_spawned = False
     else:
-        st.session_state.current_ghost = None
+        st.toast("벽에 막혀 이동할 수 없습니다!", icon="🧱")
 
-# 오디오 효과
-st.components.v1.html(
-    '<audio autoplay loop hidden><source src="https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3" type="audio/mpeg"></audio>',
-    height=0
-)
+# 헤더
+st.markdown("<h1 class='horror-title'>💀 붉은 저택: 자유 탐색 🩸</h1>", unsafe_allow_html=True)
 
-# 타이틀
-st.markdown("<h1 class='horror-title'>💀 붉은 저택의 위령제: 심연 🩸</h1>", unsafe_allow_html=True)
-st.markdown("<p class='horror-sub'>🔊 헤드셋을 착용하고 불을 끄세요. 저택 안의 원혼들이 당신의 숨소리를 듣고 있습니다.</p>", unsafe_allow_html=True)
-
-# 1. 게임 시작 화면
-if not st.session_state.game_started:
-    st.markdown("""
-    <div class='story-box'>
-        비바람이 몰아치던 밤, 길을 잃은 당신은 오랜 세월 방치된 저택 안으로 들어섰습니다.<br>
-        쿠쿵- 하는 소리와 함께 현관문이 굳게 닫히고, 쇠사슬이 감기는 소리가 들립니다.<br><br>
-        저택 안에 존재하는 다양한 원혼들을 피하고, 탈출에 필요한 4가지 핵심 구송품<br>
-        <strong>[녹슨 열쇠, 고대의 부적, 은빛 십자가, 의식용 소금]</strong>을 모두 찾아 탈출하십시오.
-    </div>
-    """, unsafe_allow_html=True)
+if not st.session_state.game_over and not st.session_state.escaped:
     
-    if st.button("👁️ 어둠 속으로 진입하기"):
-        st.session_state.game_started = True
-        st.rerun()
+    current_pos = (st.session_state.player_x, st.session_state.player_y)
+    current_room = MAP_GRID[current_pos]
 
-# 2. 게임 진행 화면
-elif not st.session_state.game_over and not st.session_state.escaped:
-    
-    # 상태창
+    # 상태 표시줄
     st.markdown(f"""
-    <div class='status-box'>
-        🩸 <strong>정신력(HP):</strong> {st.session_state.stamina}% &nbsp;|&nbsp;
-        📍 <strong>현재 위치:</strong> {st.session_state.current_room} &nbsp;|&nbsp;
+    <div class='status-panel'>
+        🩸 <strong>정신력(HP):</strong> {st.session_state.stamina}% | 
+        📍 <strong>현재 위치:</strong> {current_room['name']} (좌표: {current_pos}) | 
         🎒 <strong>소지품:</strong> {', '.join(st.session_state.inventory) if st.session_state.inventory else '없음'}
     </div>
     """, unsafe_allow_html=True)
 
-    # 귀신 조우 이벤트
-    if st.session_state.current_ghost is not None:
-        ghost = st.session_state.current_ghost
-        st.error(f"⚠️ 경고! {ghost['name']}이(가) 나타났습니다!")
-        st.markdown(f"<div class='story-box'>{ghost['desc']}</div>", unsafe_allow_html=True)
-        st.image(ghost['image'], use_container_width=True)
-        
-        st.markdown("### 🚨 대처 방법을 선택하십시오!")
-        c1, c2, c3 = st.columns(3)
-        
-        action_chosen = None
-        with c1:
-            if st.button("😱 숨죽이고 재빨리 숨기"):
-                action_chosen = "숨죽이고 재빨리 숨기"
-        with c2:
-            if st.button("🙏 눈 감고 기도하기"):
-                action_chosen = "눈 감고 기도하기"
-        with c3:
-            if st.button("💥 거울을 깨뜨리기"):
-                action_chosen = "거울을 깨뜨리기"
-
-        if action_chosen:
-            if action_chosen == ghost['correct_action']:
-                st.success(f"현명한 판단입니다! {ghost['name']}이(가) 어둠 속으로 사라졌습니다.")
-                st.session_state.current_ghost = None
-                st.rerun()
-            else:
-                damage = ghost['damage']
-                st.session_state.stamina -= damage
-                st.error(f"잘못된 선택입니다! 원혼에게 공격받아 정신력이 {damage}% 감소했습니다.")
-                st.session_state.current_ghost = None
+    # 귀신 습격 이벤트
+    if st.session_state.ghost_spawned:
+        st.error("⚠️ 쿵... 쿵... 근처에서 이상한 소리가 납니다! 귀신의 기운이 느껴집니다.")
+        col_act1, col_act2 = st.columns(2)
+        with col_act1:
+            if st.button("🏃 도망치기 (체력 -15)"):
+                st.session_state.stamina -= 15
+                st.session_state.ghost_spawned = False
                 if st.session_state.stamina <= 0:
                     st.session_state.game_over = True
                 st.rerun()
+        with col_act2:
+            if st.button("🔦 후두려 때리기 / 격퇴 시도"):
+                if "의식용 소금" in st.session_state.inventory:
+                    st.success("소금을 뿌려 귀신을 퇴치했습니다!")
+                    st.session_state.ghost_spawned = False
+                else:
+                    st.error("무기가 없어 귀신에게 습격당했습니다! (체력 -30)")
+                    st.session_state.stamina -= 30
+                    st.session_state.ghost_spawned = False
+                    if st.session_state.stamina <= 0:
+                        st.session_state.game_over = True
+                st.rerun()
 
     else:
-        st.markdown("<hr style='border-color: #8b0000;'>", unsafe_allow_html=True)
+        # 방 정보 출력
+        st.info(f"👁️ {current_room['desc']}")
 
-        # [현관]
-        if st.session_state.current_room == "현관":
-            st.image("https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-            st.markdown("<div class='story-box'>굳게 닫힌 거대한 목재 문입니다. 봉인을 해제하려면 4개의 탈출 도구가 모두 필요합니다.</div>", unsafe_allow_html=True)
-            
-            c1, c2 = st.columns(2)
-            with c1:
-                if st.button("🚪 중앙 복도로 이동"):
-                    st.session_state.current_room = "중앙 복도"
-                    check_ghost_spawn()
-                    st.rerun()
-            with c2:
-                if st.button("🔓 문 열기 (탈출 시도)"):
-                    needed = ["녹슨 열쇠", "고대의 부적", "은빛 십자가", "의식용 소금"]
-                    if all(item in st.session_state.inventory for item in needed):
+        # 조작 컨트롤 패널 (상/하/좌/우 + 행동)
+        st.markdown("### 🎮 탐색 패널")
+        col_left, col_mid, col_right = st.columns([1, 1, 1])
+
+        with col_mid:
+            if st.button("⬆️ 북쪽으로 이동"):
+                move_player(-1, 0)
+                st.rerun()
+
+        col_l, col_m, col_r = st.columns([1, 1, 1])
+        with col_l:
+            if st.button("⬅️ 서쪽으로 이동"):
+                move_player(0, -1)
+                st.rerun()
+        with col_m:
+            # 수색 및 탈출 행동
+            if current_pos == (0, 0):
+                if st.button("🔓 현관문 탈출 시도"):
+                    required = ["녹슨 열쇠", "고대의 부적", "은빛 십자가", "의식용 소금"]
+                    if all(i in st.session_state.inventory for i in required):
                         st.session_state.escaped = True
-                        st.rerun()
                     else:
-                        st.error(f"봉인이 풀리지 않습니다! 필요 아이템: {', '.join(needed)}")
-
-        # [중앙 복도]
-        elif st.session_state.current_room == "중앙 복도":
-            st.image("https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-            st.markdown("<div class='story-box'>여러 갈래로 나뉘는 복도입니다. 사방에서 시선이 느껴집니다.</div>", unsafe_allow_html=True)
-            
-            c1, c2, c3, c4 = st.columns(4)
-            with c1:
-                if st.button("📚 서재"):
-                    st.session_state.current_room = "서재"
-                    check_ghost_spawn()
-                    st.rerun()
-            with c2:
-                if st.button("🍽️ 다이닝 룸"):
-                    st.session_state.current_room = "다이닝 룸"
-                    check_ghost_spawn()
-                    st.rerun()
-            with c3:
-                if st.button("🕯️ 지하 의식실"):
-                    st.session_state.current_room = "지하 의식실"
-                    check_ghost_spawn()
-                    st.rerun()
-            with c4:
-                if st.button("🏃 현관으로 돌아가기"):
-                    st.session_state.current_room = "현관"
-                    st.rerun()
-
-        # [서재]
-        elif st.session_state.current_room == "서재":
-            st.image("https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-            st.markdown("<div class='story-box'>수많은 금서들이 꽂혀있는 서재입니다. 책상 서랍에서 무언가 빛납니다.</div>", unsafe_allow_html=True)
-            
-            if "녹슨 열쇠" not in st.session_state.inventory:
-                if st.button("🔑 책상 서랍 훔쳐보기"):
-                    st.session_state.inventory.append("녹슨 열쇠")
-                    st.success("아이템 획득: [녹슨 열쇠]")
+                        st.error(f"열쇠와 성물이 부족합니다! 필요: {', '.join(required)}")
                     st.rerun()
             else:
-                st.info("책상 서랍은 텅 비어 있습니다.")
-
-            if st.button("🚪 중앙 복도로 나가기"):
-                st.session_state.current_room = "중앙 복도"
-                check_ghost_spawn()
-                st.rerun()
-
-        # [다이닝 룸]
-        elif st.session_state.current_room == "다이닝 룸":
-            st.image("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-            st.markdown("<div class='story-box'>썩은 음식 냄새가 진동하는 식당입니다. 식탁 위에 소금 단지가 놓여 있습니다.</div>", unsafe_allow_html=True)
-            
-            if "의식용 소금" not in st.session_state.inventory:
-                if st.button("🧂 소금 단지 열기"):
-                    st.session_state.inventory.append("의식용 소금")
-                    st.success("아이템 획득: [의식용 소금]")
+                if st.button("🔍 주변 수색하기"):
+                    if current_pos not in st.session_state.searched_pos:
+                        st.session_state.searched_pos.append(current_pos)
+                        found_item = current_room["item"]
+                        if found_item:
+                            st.session_state.inventory.append(found_item)
+                            st.success(f"🎉 아이템 발견: [{found_item}]을 획득했습니다!")
+                        else:
+                            st.warning("아무것도 찾지 못했습니다.")
+                    else:
+                        st.toast("이미 수색한 장소입니다.", icon="⚠️")
                     st.rerun()
-            else:
-                st.info("소금 단지가 엎질러져 있습니다.")
-
-            if st.button("🚪 중앙 복도로 나가기"):
-                st.session_state.current_room = "중앙 복도"
-                check_ghost_spawn()
+        with col_r:
+            if st.button("➡️ 동쪽으로 이동"):
+                move_player(0, 1)
                 st.rerun()
 
-        # [지하 의식실]
-        elif st.session_state.current_room == "지하 의식실":
-            st.image("https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-            st.markdown("<div class='story-box'>붉은 양초로 둘러싸인 제단입니다. 마법진 위에 신성한 물건들이 놓여 있습니다.</div>", unsafe_allow_html=True)
-            
-            c1, c2 = st.columns(2)
-            with c1:
-                if "고대의 부적" not in st.session_state.inventory:
-                    if st.button("📜 부적 집어들기"):
-                        st.session_state.inventory.append("고대의 부적")
-                        st.success("아이템 획득: [고대의 부적]")
-                        st.rerun()
-            with c2:
-                if "은빛 십자가" not in st.session_state.inventory:
-                    if st.button("✝️ 십자가 챙기기"):
-                        st.session_state.inventory.append("은빛 십자가")
-                        st.success("아이템 획득: [은빛 십자가]")
-                        st.rerun()
-
-            if st.button("🚪 중앙 복도로 올라가기"):
-                st.session_state.current_room = "중앙 복도"
-                check_ghost_spawn()
+        with col_mid:
+            if st.button("⬇️ 남쪽으로 이동"):
+                move_player(1, 0)
                 st.rerun()
 
-# 3. 게임 오버 화면
+# 게임 오버
 elif st.session_state.game_over:
-    st.markdown("<h1 style='text-align: center; color: red;'>💥 GAME OVER 💥</h1>", unsafe_allow_html=True)
-    st.image("https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=800&q=80", use_container_width=True)
-    st.error("당신의 정신력이 한계에 도달했습니다. 영혼을 빼앗겨 영원히 이 저택을 방황하게 됩니다...")
-    if st.button("🔄 다시 도전하기"):
+    st.error("💥 정신력을 모두 잃었습니다... 저택의 어둠 속으로 끌려갑니다.")
+    if st.button("🔄 다시 시작"):
         restart_game()
         st.rerun()
 
-# 4. 게임 클리어 화면
+# 탈출 성공
 elif st.session_state.escaped:
     st.balloons()
-    st.markdown("<h1 style='text-align: center; color: #00ff00;'>🎉 탈출 성공! 🎉</h1>", unsafe_allow_html=True)
-    st.success("4개의 성물을 이용해 봉인을 풀고 저택을 무사히 탈출했습니다! 동이 터오기 시작합니다.")
-    if st.button("🔄 처음부터 다시 하기"):
+    st.success("🎉 모든 구송품을 사용해 저택을 무사히 탈출했습니다!")
+    if st.button("🔄 다시 시작"):
         restart_game()
         st.rerun()
