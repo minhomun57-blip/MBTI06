@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="낡은 집에서의 탈출 - 3D", layout="wide")
 
 st.title("🏚️ 낡은 집에서의 탈출 (Old House Escape)")
-st.caption("화면 클릭 후 조작 | W(ㅈ): 전진 | S(ㄴ): 후진 | A(ㅁ): 좌측 | D(ㅇ): 우측 | E(ㄷ) 꾹 누르기: 달리기")
+st.caption("화면 클릭 후 드래그 또는 마우스 이동으로 시점 회전 | W/S/A/D: 이동 | E (꾹 누르기): 달리기")
 
 game_html = """
 <!DOCTYPE html>
@@ -14,16 +14,76 @@ game_html = """
         body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; user-select: none; }
         #canvas { width: 100%; height: 530px; display: block; cursor: pointer; }
         
-        #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
+        #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
         .bar-container { width: 180px; height: 16px; background: rgba(255,255,255,0.2); border: 2px solid #333; border-radius: 8px; overflow: hidden; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
         #hp-bar { background: linear-gradient(90deg, #ff3333, #ff6666); }
         #stamina-bar { background: linear-gradient(90deg, #33cc33, #66ff66); }
 
-        #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+        #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 5; }
         .slot { width: 55px; height: 55px; border: 2px solid #555; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 5px; text-align: center; }
-        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 28px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; }
-        #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; }
+        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 28px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; z-index: 5; }
+        #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; z-index: 5; }
+
+        /* 화면을 꽉 채우는 점프스케어 귀신 연출 */
+        #jumpscare {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 99;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #scare-face {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, #ff0000 0%, #330000 70%, #000000 100%);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 50px #ff0000;
+            animation: shake 0.05s infinite alternate;
+        }
+        .eye {
+            position: absolute;
+            top: 35%;
+            width: 70px;
+            height: 70px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: inset 0 0 15px #000;
+        }
+        .eye.left { left: 20%; }
+        .eye.right { right: 20%; }
+        .pupil {
+            position: absolute;
+            top: 25%; left: 25%;
+            width: 35px; height: 35px;
+            background: #000;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        .mouth {
+            position: absolute;
+            bottom: 15%; left: 20%;
+            width: 60%; height: 90px;
+            background: #000;
+            border-radius: 0 0 50px 50px;
+            border: 4px solid #880000;
+        }
+        #scare-text {
+            color: #ff0000;
+            font-size: 36px;
+            font-weight: 900;
+            margin-top: 20px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(3px, 3px) scale(1.1); }
+            100% { transform: translate(-3px, -3px) scale(1.15); }
+        }
     </style>
 </head>
 <body>
@@ -41,7 +101,7 @@ game_html = """
 
     <div id="room-info">
         <div style="color:gold; font-weight:bold;">장소: 낡은 집 안채</div>
-        <div>목표: 가구 사이를 수색해 열쇠를 찾고 탈출하라</div>
+        <div>목표: 열쇠를 찾아 탈출하라</div>
     </div>
     
     <div id="inventory">
@@ -51,7 +111,15 @@ game_html = """
         <div class="slot" id="slot4">[4]<br>녹슨 열쇠</div>
     </div>
 
-    <div id="msg">클릭하여 시작하세요</div>
+    <div id="msg">화면을 클릭하면 시점 조작이 활성화됩니다</div>
+    <div id="jumpscare">
+        <div id="scare-face">
+            <div class="eye left"><div class="pupil"></div></div>
+            <div class="eye right"><div class="pupil"></div></div>
+            <div class="mouth"></div>
+        </div>
+        <div id="scare-text">💀 원혼에게 붙잡혔습니다! 💀</div>
+    </div>
     <canvas id="canvas"></canvas>
 
 <script>
@@ -60,8 +128,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 530;
 
-// 0: 길, 1: 벽, 2: 열쇠, 3: 출구, 4: 단검, 5: 포션, 6: 배터리
-// 7: 침대, 8: 책상, 9: 서랍장, 10: 의자, 11: 옷장
 const houseMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,7,0,10,1,8,0,0,1,9,0,11,4,0,1],
@@ -80,7 +146,6 @@ const houseMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-// 플레이어 시작 위치 (중앙 안전 지대)
 let px = 7.5, py = 7.5;
 let angle = 0;
 let hp = 100;
@@ -91,15 +156,16 @@ let gameOver = false;
 let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
 let isAttacking = 0;
 
-// 귀신 스폰 위치를 플레이어와 멀리 떨어진 구석으로 수정
+// 귀신 위치 설정
 let ghosts = [
     { x: 1.5, y: 1.5, hp: 80, stun: 0 },
     { x: 13.5, y: 13.5, hp: 80, stun: 0 }
 ];
 
 const keys = {};
+let isMouseDown = false;
+let lastMouseX = 0;
 
-// 키보드 입력을 영어 및 한글 조합에 맞춰 변환
 function parseKey(k) {
     k = k.toLowerCase();
     if (k === 'ㅈ') return 'w';
@@ -114,21 +180,9 @@ window.addEventListener('keydown', e => {
     let k = parseKey(e.key);
     keys[k] = true;
     
-    if (e.key === '1' && items.potion > 0) {
-        hp = Math.min(100, hp + 50);
-        items.potion--;
-        updateUI();
-    }
-    if (e.key === '2' && items.battery > 0) {
-        flashRange = 14;
-        items.battery--;
-        updateUI();
-    }
-    if (e.key === '3' && items.talisman > 0) {
-        ghosts.forEach(g => g.stun = 180);
-        items.talisman--;
-        updateUI();
-    }
+    if (e.key === '1' && items.potion > 0) { hp = Math.min(100, hp + 50); items.potion--; updateUI(); }
+    if (e.key === '2' && items.battery > 0) { flashRange = 14; items.battery--; updateUI(); }
+    if (e.key === '3' && items.talisman > 0) { ghosts.forEach(g => g.stun = 180); items.talisman--; updateUI(); }
 });
 
 window.addEventListener('keyup', e => {
@@ -136,7 +190,10 @@ window.addEventListener('keyup', e => {
     keys[k] = false;
 });
 
-canvas.addEventListener('click', () => {
+// 화면 회전을 위한 마우스 이벤트 (PointerLock + Drag 방식 둘 다 지원)
+canvas.addEventListener('mousedown', e => {
+    isMouseDown = true;
+    lastMouseX = e.clientX;
     if (document.pointerLockElement !== canvas) {
         canvas.requestPointerLock();
         document.getElementById('msg').innerText = "";
@@ -146,9 +203,16 @@ canvas.addEventListener('click', () => {
     }
 });
 
+window.addEventListener('mouseup', () => { isMouseDown = false; });
+
 window.addEventListener('mousemove', e => {
-    if (document.pointerLockElement === canvas && !gameOver) {
-        angle += e.movementX * 0.003;
+    if (gameOver) return;
+    if (document.pointerLockElement === canvas) {
+        angle += e.movementX * 0.004;
+    } else if (isMouseDown) {
+        let deltaX = e.clientX - lastMouseX;
+        angle += deltaX * 0.006;
+        lastMouseX = e.clientX;
     }
 });
 
@@ -181,8 +245,15 @@ function updateUI() {
 
 function isSolid(x, y) {
     let cell = houseMap[Math.floor(y)][Math.floor(x)];
-    // 벽(1) 및 모든 가구(7~11) 충돌 처리
     return cell === 1 || (cell >= 7 && cell <= 11);
+}
+
+function triggerJumpscare() {
+    gameOver = true;
+    document.getElementById('jumpscare').style.display = 'flex';
+    if (document.exitPointerLock) {
+        document.exitPointerLock();
+    }
 }
 
 function update() {
@@ -191,7 +262,6 @@ function update() {
     let speed = 0.04;
     let isMoving = keys['w'] || keys['s'] || keys['a'] || keys['d'];
 
-    // E키 누르고 이동 시만 달리기 적용
     if (keys['e'] && isMoving && stamina >= 0.5) {
         speed = 0.08;
         stamina = Math.max(0, stamina - 0.5);
@@ -208,7 +278,6 @@ function update() {
     if (!isSolid(px + dx, py)) px += dx;
     if (!isSolid(px, py + dy)) py += dy;
 
-    // 아이템 습득 처리
     let ix = Math.floor(px), iy = Math.floor(py);
     let cell = houseMap[iy][ix];
     if (cell === 2) { items.key = true; houseMap[iy][ix] = 0; }
@@ -222,7 +291,7 @@ function update() {
     }
     updateUI();
 
-    // 귀신 추격 AI
+    // 귀신 추격 AI (속도를 0.007로 대폭 축소)
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         if (g.stun > 0) {
@@ -231,14 +300,13 @@ function update() {
             let gdx = px - g.x, gdy = py - g.y;
             let dist = Math.sqrt(gdx*gdx + gdy*gdy);
             if (dist > 0.1) {
-                g.x += (gdx / dist) * 0.018;
-                g.y += (gdy / dist) * 0.018;
+                g.x += (gdx / dist) * 0.007; // 둔화된 이동 속도
+                g.y += (gdy / dist) * 0.007;
             }
             if (dist < 0.6) {
-                hp -= 1.2;
+                hp -= 2.0;
                 if (hp <= 0) {
-                    gameOver = true;
-                    document.getElementById('msg').innerText = "💀 낡은 집의 원혼에게 붙잡혔습니다...";
+                    triggerJumpscare();
                 }
             }
         }
@@ -250,23 +318,18 @@ function update() {
 function renderFurniture(type, sx, canvasHeight, size) {
     ctx.save();
     if (type === 7) {
-        // 침대
         ctx.fillStyle = '#4a2e18';
         ctx.fillRect(sx - size/2, canvasHeight/2, size, size/2);
     } else if (type === 8) {
-        // 책상
         ctx.fillStyle = '#3d2514';
         ctx.fillRect(sx - size/2, canvasHeight/2 + size/6, size, size/3);
     } else if (type === 9) {
-        // 서랍장
         ctx.fillStyle = '#2b1a0e';
         ctx.fillRect(sx - size/3, canvasHeight/2 - size/6, size/1.5, size/1.2);
     } else if (type === 10) {
-        // 의자
         ctx.fillStyle = '#5c3a21';
         ctx.fillRect(sx - size/4, canvasHeight/2 + size/8, size/2, size/2);
     } else if (type === 11) {
-        // 대형 옷장
         ctx.fillStyle = '#1f1208';
         ctx.fillRect(sx - size/2.5, canvasHeight/2 - size/2, size/1.25, size);
     }
@@ -315,7 +378,6 @@ function render() {
         ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
     }
 
-    // 다양한 가구 오브젝트 렌더링
     for (let y = 0; y < 15; y++) {
         for (let x = 0; x < 15; x++) {
             let cell = houseMap[y][x];
@@ -337,7 +399,6 @@ function render() {
         }
     }
 
-    // 붉은 발광 유령(귀신)
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -366,7 +427,6 @@ function render() {
         }
     });
 
-    // 무기 애니메이션
     if (items.knife) {
         ctx.save();
         let attackOffset = isAttacking * 9;
