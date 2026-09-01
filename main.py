@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="낡은 집에서의 탈출 - 3D", layout="wide")
 
 st.title("🏚️ 낡은 집에서의 탈출 (Old House Escape)")
-st.caption("화면 클릭 후 영문 상태에서 조작 | W: 전진 | S: 후진 | A: 좌측 | D: 우측 | E (꾹 누르기): 달리기 | 마우스: 회전")
+st.caption("화면 클릭 후 조작 | W(ㅈ): 전진 | S(ㄴ): 후진 | A(ㅁ): 좌측 | D(ㅇ): 우측 | E(ㄷ) 꾹 누르기: 달리기")
 
 game_html = """
 <!DOCTYPE html>
@@ -14,7 +14,6 @@ game_html = """
         body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; user-select: none; }
         #canvas { width: 100%; height: 530px; display: block; cursor: pointer; }
         
-        /* UI 및 게이지 바 스타일 */
         #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
         .bar-container { width: 180px; height: 16px; background: rgba(255,255,255,0.2); border: 2px solid #333; border-radius: 8px; overflow: hidden; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
@@ -23,7 +22,7 @@ game_html = """
 
         #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
         .slot { width: 55px; height: 55px; border: 2px solid #555; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 5px; text-align: center; }
-        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 32px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; }
+        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 28px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; }
         #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; }
     </style>
 </head>
@@ -52,7 +51,7 @@ game_html = """
         <div class="slot" id="slot4">[4]<br>녹슨 열쇠</div>
     </div>
 
-    <div id="msg">화면을 클릭하면 게임이 시작됩니다.</div>
+    <div id="msg">클릭하여 시작하세요</div>
     <canvas id="canvas"></canvas>
 
 <script>
@@ -61,25 +60,27 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 530;
 
-// 낡은 집 맵 구조 (0: 길, 1: 벽, 2: 열쇠, 3: 출구, 4: 단검, 5: 포션, 6: 배터리, 7~9: 가구)
+// 0: 길, 1: 벽, 2: 열쇠, 3: 출구, 4: 단검, 5: 포션, 6: 배터리
+// 7: 침대, 8: 책상, 9: 서랍장, 10: 의자, 11: 옷장
 const houseMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,7,0,0,1,8,0,0,1,9,0,0,4,0,1],
+    [1,7,0,10,1,8,0,0,1,9,0,11,4,0,1],
     [1,7,0,0,1,0,0,0,1,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,2,0,0,1],
+    [1,0,0,0,0,0,10,0,0,0,0,2,0,0,1],
     [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
     [1,0,1,5,0,0,0,7,0,0,0,8,1,0,1],
-    [1,0,1,0,0,0,0,7,0,0,0,0,1,0,1],
+    [1,0,1,0,11,0,0,7,0,10,0,0,1,0,1],
     [1,0,0,0,9,0,0,0,0,0,6,0,0,0,1],
-    [1,0,1,0,0,0,0,8,0,0,0,0,1,0,1],
-    [1,0,1,6,0,0,0,8,0,0,0,5,1,0,1],
+    [1,0,1,0,0,0,0,8,0,0,0,11,1,0,1],
+    [1,0,1,6,0,10,0,8,0,0,0,5,1,0,1],
     [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,9,0,0,1,0,0,0,1,0,0,0,7,0,1],
+    [1,9,0,10,1,0,0,0,1,11,0,0,7,0,1],
     [1,0,0,0,1,3,1,0,1,0,0,0,7,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
+// 플레이어 시작 위치 (중앙 안전 지대)
 let px = 7.5, py = 7.5;
 let angle = 0;
 let hp = 100;
@@ -90,22 +91,27 @@ let gameOver = false;
 let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
 let isAttacking = 0;
 
-// 선명한 붉은빛의 귀신
+// 귀신 스폰 위치를 플레이어와 멀리 떨어진 구석으로 수정
 let ghosts = [
-    { x: 3.5, y: 3.5, hp: 80, stun: 0 },
-    { x: 11.5, y: 11.5, hp: 80, stun: 0 }
+    { x: 1.5, y: 1.5, hp: 80, stun: 0 },
+    { x: 13.5, y: 13.5, hp: 80, stun: 0 }
 ];
 
 const keys = {};
 
-// 키 입력 리스너 (대소문자 및 한글 입력 방지)
+// 키보드 입력을 영어 및 한글 조합에 맞춰 변환
+function parseKey(k) {
+    k = k.toLowerCase();
+    if (k === 'ㅈ') return 'w';
+    if (k === 'ㄴ') return 's';
+    if (k === 'ㅁ') return 'a';
+    if (k === 'ㅇ') return 'd';
+    if (k === 'ㄷ') return 'e';
+    return k;
+}
+
 window.addEventListener('keydown', e => {
-    let k = e.key.toLowerCase();
-    if (k === 'ㄷ') k = 'w';
-    if (k === 'ㄴ') k = 's';
-    if (k === 'ㅁ') k = 'a';
-    if (k === 'ㅇ') k = 'd';
-    if (k === 'ㄷ') k = 'e';
+    let k = parseKey(e.key);
     keys[k] = true;
     
     if (e.key === '1' && items.potion > 0) {
@@ -126,12 +132,7 @@ window.addEventListener('keydown', e => {
 });
 
 window.addEventListener('keyup', e => {
-    let k = e.key.toLowerCase();
-    if (k === 'ㄷ') k = 'w';
-    if (k === 'ㄴ') k = 's';
-    if (k === 'ㅁ') k = 'a';
-    if (k === 'ㅇ') k = 'd';
-    if (k === 'ㄷ') k = 'e';
+    let k = parseKey(e.key);
     keys[k] = false;
 });
 
@@ -168,10 +169,8 @@ function checkAttackHit() {
 }
 
 function updateUI() {
-    // 체력 및 스테미나 바 업데이트
     document.getElementById('hp-bar').style.width = Math.max(0, hp) + "%";
     document.getElementById('stamina-bar').style.width = Math.max(0, stamina) + "%";
-    
     document.getElementById('weapon').innerText = items.knife ? "녹슨 단검 (클릭: 공격)" : "맨손";
     
     document.getElementById('slot1').style.borderColor = items.potion > 0 ? "lime" : "#555";
@@ -182,24 +181,24 @@ function updateUI() {
 
 function isSolid(x, y) {
     let cell = houseMap[Math.floor(y)][Math.floor(x)];
-    return cell === 1 || cell === 7 || cell === 8 || cell === 9;
+    // 벽(1) 및 모든 가구(7~11) 충돌 처리
+    return cell === 1 || (cell >= 7 && cell <= 11);
 }
 
 function update() {
     if (gameOver) return;
 
-    // E 키 누르고 있을 때만 달리기 적용 및 스테미나 0.5 감소
     let speed = 0.04;
     let isMoving = keys['w'] || keys['s'] || keys['a'] || keys['d'];
 
+    // E키 누르고 이동 시만 달리기 적용
     if (keys['e'] && isMoving && stamina >= 0.5) {
         speed = 0.08;
-        stamina = Math.max(0, stamina - 0.5); // 달릴 때만 0.5 차감
+        stamina = Math.max(0, stamina - 0.5);
     } else {
-        stamina = Math.min(100, stamina + 0.1); // 안 달릴 땐 서서히 회복 (걸을 때 차감 안됨)
+        stamina = Math.min(100, stamina + 0.1);
     }
 
-    // W, S, A, D 이동
     let dx = 0, dy = 0;
     if (keys['w']) { dx += Math.cos(angle) * speed; dy += Math.sin(angle) * speed; }
     if (keys['s']) { dx -= Math.cos(angle) * speed; dy -= Math.sin(angle) * speed; }
@@ -209,7 +208,7 @@ function update() {
     if (!isSolid(px + dx, py)) px += dx;
     if (!isSolid(px, py + dy)) py += dy;
 
-    // 아이템 수집
+    // 아이템 습득 처리
     let ix = Math.floor(px), iy = Math.floor(py);
     let cell = houseMap[iy][ix];
     if (cell === 2) { items.key = true; houseMap[iy][ix] = 0; }
@@ -232,8 +231,8 @@ function update() {
             let gdx = px - g.x, gdy = py - g.y;
             let dist = Math.sqrt(gdx*gdx + gdy*gdy);
             if (dist > 0.1) {
-                g.x += (gdx / dist) * 0.02;
-                g.y += (gdy / dist) * 0.02;
+                g.x += (gdx / dist) * 0.018;
+                g.y += (gdy / dist) * 0.018;
             }
             if (dist < 0.6) {
                 hp -= 1.2;
@@ -251,14 +250,25 @@ function update() {
 function renderFurniture(type, sx, canvasHeight, size) {
     ctx.save();
     if (type === 7) {
+        // 침대
         ctx.fillStyle = '#4a2e18';
         ctx.fillRect(sx - size/2, canvasHeight/2, size, size/2);
     } else if (type === 8) {
+        // 책상
         ctx.fillStyle = '#3d2514';
         ctx.fillRect(sx - size/2, canvasHeight/2 + size/6, size, size/3);
     } else if (type === 9) {
+        // 서랍장
         ctx.fillStyle = '#2b1a0e';
         ctx.fillRect(sx - size/3, canvasHeight/2 - size/6, size/1.5, size/1.2);
+    } else if (type === 10) {
+        // 의자
+        ctx.fillStyle = '#5c3a21';
+        ctx.fillRect(sx - size/4, canvasHeight/2 + size/8, size/2, size/2);
+    } else if (type === 11) {
+        // 대형 옷장
+        ctx.fillStyle = '#1f1208';
+        ctx.fillRect(sx - size/2.5, canvasHeight/2 - size/2, size/1.25, size);
     }
     ctx.restore();
 }
@@ -305,11 +315,11 @@ function render() {
         ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
     }
 
-    // 가구 렌더링
+    // 다양한 가구 오브젝트 렌더링
     for (let y = 0; y < 15; y++) {
         for (let x = 0; x < 15; x++) {
             let cell = houseMap[y][x];
-            if (cell >= 7 && cell <= 9) {
+            if (cell >= 7 && cell <= 11) {
                 let fdx = (x + 0.5) - px;
                 let fdy = (y + 0.5) - py;
                 let fDist = Math.sqrt(fdx*fdx + fdy*fdy);
@@ -327,7 +337,7 @@ function render() {
         }
     }
 
-    // 선명하게 가시화된 붉은 유령(귀신)
+    // 붉은 발광 유령(귀신)
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -342,13 +352,11 @@ function render() {
             let size = Math.min(380, canvas.height / gDist);
 
             ctx.save();
-            // 귀신 몸통 (붉은 발광체)
             ctx.fillStyle = g.stun > 0 ? '#00ffff' : '#ff1a1a';
             ctx.beginPath();
             ctx.arc(sx, canvas.height/2 - size/6, size/2.5, 0, Math.PI * 2);
             ctx.fill();
 
-            // 유령 눈빛
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(sx - size/8, canvas.height/2 - size/4, size/12, 0, Math.PI * 2);
@@ -358,7 +366,7 @@ function render() {
         }
     });
 
-    // 공격 무기
+    // 무기 애니메이션
     if (items.knife) {
         ctx.save();
         let attackOffset = isAttacking * 9;
