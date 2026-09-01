@@ -1,234 +1,290 @@
-import tkinter as tk
-import math
-import random
+import streamlit as st
+import streamlit.components.v1 as components
 
-class HorrorGame3D:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("어둠 속의 탈출 - 3D First Person")
-        self.root.geometry("800x600")
-        self.root.configure(bg="black")
+st.set_page_config(page_title="어둠 속의 생존 - 3D 무기 시스템", layout="wide")
 
-        # 3D 캔버스 설정
-        self.canvas = tk.Canvas(root, width=800, height=600, bg="black", highlightthickness=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+st.title("🗡️ 어둠 속의 생존 (3D 아이템 & 무기 시스템)")
+st.caption("WASD: 이동 | 마우스: 시점 회전 | 좌클릭: 무기 공격 | 1~3: 아이템 사용 | Shift: 달리기")
 
-        # 플레이어 상태 (1인칭 시점 및 위치)
-        self.px = 2.0
-        self.py = 2.0
-        self.angle = 0.0  # 보는 각도(라디안)
-        self.fov = math.pi / 3  # 시야각(60도)
-        self.move_speed = 0.08
-        self.rot_speed = 0.05
-        self.stamina = 100.0
+game_html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; user-select: none; }
+        #canvas { width: 100%; height: 520px; display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 1px 1px 3px black; font-size: 15px; }
+        #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+        .slot { width: 50px; height: 50px; border: 2px solid #555; background: rgba(0,0,0,0.7); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border-radius: 5px; }
+        .active { border-color: gold; }
+        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 30px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px black; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div>체력: <span id="hp" style="color:red;">100</span> / 100</div>
+        <div>스테미나: <span id="stamina" style="color:lightgreen;">100</span>%</div>
+        <div>장착 무기: <span id="weapon" style="color:cyan;">맨손</span></div>
+    </div>
+    
+    <div id="inventory">
+        <div class="slot" id="slot1">[1]<br>포션</div>
+        <div class="slot" id="slot2">[2]<br>건전지</div>
+        <div class="slot" id="slot3">[3]<br>부적</div>
+        <div class="slot" id="slot4">[4]<br>열쇠</div>
+    </div>
 
-        # 게임 진행 변수
-        self.has_key = False
-        self.game_over = False
-        self.escaped = False
-        self.jumpscare_timer = 0
+    <div id="msg"></div>
+    <canvas id="canvas"></canvas>
 
-        # 맵 구조 (1: 벽, 0: 통로, 2: 열쇠, 3: 출구)
-        self.map_grid = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 1, 0, 0, 0, 2, 1],
-            [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-            [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-            [1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-            [1, 3, 1, 1, 1, 1, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        ]
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 520;
 
-        # 3D 귀신 위치
-        self.gx = 7.5
-        self.gy = 7.5
-        self.ghost_speed = 0.035
+// 맵 (1: 벽, 0: 통로, 2: 열쇠, 4: 단검, 5: 체력포션, 6: 배터리, 3: 출구)
+const map = [
+    [1,1,1,1,1,1,1,1,1,1],
+    [1,0,5,0,1,0,4,0,2,1],
+    [1,0,1,0,1,0,1,1,0,1],
+    [1,0,1,0,6,0,0,1,0,1],
+    [1,0,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,1,0,0,0,1],
+    [1,1,1,1,0,1,1,1,0,1],
+    [1,0,6,0,0,0,5,1,0,1],
+    [1,3,1,1,1,1,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1]
+];
 
-        # 키 입력을 위한 상태 저장
-        self.keys = {}
-        self.root.bind("<KeyPress>", self.key_down)
-        self.root.bind("<KeyRelease>", self.key_up)
+// 플레이어 속성
+let px = 2.5, py = 2.5;
+let angle = 0;
+let hp = 100;
+let stamina = 100;
+let flashRange = 8;
+let gameOver = false;
 
-        # 게임 루프 시작
-        self.game_loop()
+// 인벤토리 & 무기
+let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
+let isAttacking = 0; // 공격 애니메이션 타이머
 
-    def key_down(self, event):
-        self.keys[event.keysym.lower()] = True
+// 귀신 속성
+let gx = 7.5, gy = 7.5;
+let ghostHp = 100;
+let ghostStun = 0;
 
-    def key_up(self, event):
-        self.keys[event.keysym.lower()] = False
+// 키 입력 & 마우스 조작
+const keys = {};
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    
+    // 아이템 사용 키
+    if (e.key === '1' && items.potion > 0) {
+        hp = Math.min(100, hp + 40);
+        items.potion--;
+        updateUI();
+    }
+    if (e.key === '2' && items.battery > 0) {
+        flashRange = 10;
+        items.battery--;
+        updateUI();
+    }
+    if (e.key === '3' && items.talisman > 0) {
+        ghostStun = 150; // 귀신 5초간 마비
+        items.talisman--;
+        updateUI();
+    }
+});
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    def process_movement(self):
-        if self.game_over:
-            return
+// 마우스 클릭 시 무기 공격
+canvas.addEventListener('click', () => {
+    if (document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock();
+    } else if (items.knife && isAttacking === 0 && !gameOver) {
+        isAttacking = 10; // 공격 찌르기 모션 시작
+        checkAttackHit();
+    }
+});
 
-        # Shift 입력 시 달리며 스테미나 소비
-        speed = self.move_speed
-        if self.keys.get("shift_l") or self.keys.get("shift_r"):
-            if self.stamina > 5:
-                speed *= 1.6
-                self.stamina -= 0.8
-        else:
-            self.stamina = min(100.0, self.stamina + 0.3)
+window.addEventListener('mousemove', e => {
+    if (document.pointerLockElement === canvas && !gameOver) {
+        angle += e.movementX * 0.003;
+    }
+});
 
-        # 회전 (A, D 키 또는 좌우 화살표)
-        if self.keys.get("a") or self.keys.get("left"):
-            self.angle -= self.rot_speed
-        if self.keys.get("d") or self.keys.get("right"):
-            self.angle += self.rot_speed
+function checkAttackHit() {
+    let gdx = gx - px, gdy = gy - py;
+    let dist = Math.sqrt(gdx*gdx + gdy*gdy);
+    let gAngle = Math.atan2(gdy, gdx) - angle;
+    while (gAngle < -Math.PI) gAngle += 2 * Math.PI;
+    while (gAngle > Math.PI) gAngle -= 2 * Math.PI;
 
-        # 이동 계산 (W, S 키)
-        dx = math.cos(self.angle) * speed
-        dy = math.sin(self.angle) * speed
+    // 근접거리 내에서 바라보고 공격할 때 타격
+    if (dist < 1.8 && Math.abs(gAngle) < 0.5) {
+        ghostHp -= 40;
+        ghostStun = 30; // 1초간 멈춤
+        if (ghostHp <= 0) {
+            gx = -10; gy = -10; // 귀신 소멸
+        }
+    }
+}
 
-        if self.keys.get("w") or self.keys.get("up"):
-            if self.map_grid[int(self.py)][int(self.px + dx)] == 0:
-                self.px += dx
-            if self.map_grid[int(self.py + dy)][int(self.px)] == 0:
-                self.py += dy
-        if self.keys.get("s") or self.keys.get("down"):
-            if self.map_grid[int(self.py)][int(self.px - dx)] == 0:
-                self.px -= dx
-            if self.map_grid[int(self.py - dy)][int(self.px)] == 0:
-                self.py -= dy
+function updateUI() {
+    document.getElementById('hp').innerText = Math.max(0, Math.floor(hp));
+    document.getElementById('stamina').innerText = Math.floor(stamina);
+    document.getElementById('weapon').innerText = items.knife ? "녹슨 단검 (클릭: 공격)" : "맨손";
+    
+    document.getElementById('slot1').style.borderColor = items.potion > 0 ? "lime" : "#555";
+    document.getElementById('slot2').style.borderColor = items.battery > 0 ? "yellow" : "#555";
+    document.getElementById('slot3').style.borderColor = items.talisman > 0 ? "cyan" : "#555";
+    document.getElementById('slot4').style.borderColor = items.key ? "gold" : "#555";
+}
 
-        # 열쇠 획득 체크
-        ix, iy = int(self.px), int(self.py)
-        if self.map_grid[iy][ix] == 2:
-            self.has_key = True
-            self.map_grid[iy][ix] = 0
+function update() {
+    if (gameOver) return;
 
-        # 탈출 체크
-        if self.map_grid[iy][ix] == 3 and self.has_key:
-            self.escaped = True
-            self.game_over = True
+    // 이동 처리
+    let speed = 0.04;
+    if (keys['shift'] && stamina > 5) {
+        speed = 0.08;
+        stamina = Math.max(0, stamina - 0.6);
+    } else {
+        stamina = Math.min(100, stamina + 0.2);
+    }
 
-    def update_ghost(self):
-        if self.game_over:
-            return
+    let dx = 0, dy = 0;
+    if (keys['w']) { dx += Math.cos(angle) * speed; dy += Math.sin(angle) * speed; }
+    if (keys['s']) { dx -= Math.cos(angle) * speed; dy -= Math.sin(angle) * speed; }
+    if (keys['a']) { dx += Math.sin(angle) * speed; dy -= Math.cos(angle) * speed; }
+    if (keys['d']) { dx -= Math.sin(angle) * speed; dy += Math.cos(angle) * speed; }
 
-        # 귀신이 플레이어를 실시간 추격
-        dx = self.px - self.gx
-        dy = self.py - self.gy
-        dist = math.sqrt(dx * dx + dy * dy)
+    if (map[Math.floor(py)][Math.floor(px + dx)] === 0) px += dx;
+    if (map[Math.floor(py + dy)][Math.floor(px)] === 0) py += dy;
 
-        if dist > 0.1:
-            self.gx += (dx / dist) * self.ghost_speed
-            self.gy += (dy / dist) * self.ghost_speed
+    // 맵 아이템 습득
+    let ix = Math.floor(px), iy = Math.floor(py);
+    let cell = map[iy][ix];
+    if (cell === 2) { items.key = true; map[iy][ix] = 0; }
+    else if (cell === 4) { items.knife = true; map[iy][ix] = 0; }
+    else if (cell === 5) { items.potion++; map[iy][ix] = 0; }
+    else if (cell === 6) { items.battery++; map[iy][ix] = 0; }
+    else if (cell === 3 && items.key) {
+        gameOver = true;
+        document.getElementById('msg').innerText = "🏆 생존 성공! 탈출했습니다.";
+        document.getElementById('msg').style.color = "cyan";
+    }
+    updateUI();
 
-        # 잡혔을 때 게임 오버
-        if dist < 0.6:
-            self.jumpscare_timer = 15
-            self.game_over = True
+    // 귀신 AI
+    if (ghostHp > 0) {
+        if (ghostStun > 0) {
+            ghostStun--;
+        } else {
+            let gdx = px - gx, gdy = py - gy;
+            let dist = Math.sqrt(gdx*gdx + gdy*gdy);
+            if (dist > 0.1) {
+                gx += (gdx / dist) * 0.022;
+                gy += (gdy / dist) * 0.022;
+            }
+            if (dist < 0.6) {
+                hp -= 1.5; // 지속 피해
+                if (hp <= 0) {
+                    gameOver = true;
+                    document.getElementById('msg').innerText = "💀 귀신에게 처단당했습니다...";
+                }
+            }
+        }
+    }
 
-    def render_3d(self):
-        self.canvas.delete("all")
-        w, h = 800, 600
-        num_rays = 80  # 가로 레이캐스팅 광선 수
+    if (isAttacking > 0) isAttacking--;
+}
 
-        # 천장/바닥 어두운 배경 연출
-        self.canvas.create_rectangle(0, 0, w, h // 2, fill="#0a0a0a")
-        self.canvas.create_rectangle(0, h // 2, w, h, fill="#141414")
+function render() {
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, canvas.width, canvas.height/2);
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
-        # 레이캐스팅(Raycasting)으로 3D 벽 렌더링
-        for i in range(num_rays):
-            ray_angle = (self.angle - self.fov / 2) + (i / num_rays) * self.fov
-            distance_to_wall = 0.0
-            hit_wall = False
-            
-            cos_a = math.cos(ray_angle)
-            sin_a = math.sin(ray_angle)
+    const fov = Math.PI / 3;
+    const numRays = 120;
+    const w = canvas.width / numRays;
 
-            while not hit_wall and distance_to_wall < 10.0:
-                distance_to_wall += 0.05
-                test_x = int(self.px + cos_a * distance_to_wall)
-                test_y = int(self.py + sin_a * distance_to_wall)
+    // 3D 벽 레이캐스팅
+    for (let i = 0; i < numRays; i++) {
+        let rayAngle = (angle - fov / 2) + (i / numRays) * fov;
+        let distance = 0;
+        let hit = false;
 
-                if test_x < 0 or test_x >= 10 or test_y < 0 or test_y >= 10:
-                    hit_wall = True
-                    distance_to_wall = 10.0
-                elif self.map_grid[test_y][test_x] == 1:
-                    hit_wall = True
+        while (!hit && distance < flashRange) {
+            distance += 0.05;
+            let tx = Math.floor(px + Math.cos(rayAngle) * distance);
+            let ty = Math.floor(py + Math.sin(rayAngle) * distance);
 
-            # 어두운 시야 거리 감쇄 계산 (손전등 효과)
-            corrected_dist = distance_to_wall * math.cos(ray_angle - self.angle)
-            wall_height = min(h, int(h / (corrected_dist + 0.0001)))
-            
-            # 음영 처리
-            shade = max(0, int(200 - (corrected_dist * 20)))
-            color_hex = f"#{shade:02x}{int(shade*0.2):02x}{int(shade*0.2):02x}"
+            if (tx < 0 || tx >= 10 || ty < 0 || ty >= 10 || map[ty][tx] === 1) {
+                hit = true;
+            }
+        }
 
-            x1 = i * (w / num_rays)
-            x2 = (i + 1) * (w / num_rays)
-            y1 = (h // 2) - (wall_height // 2)
-            y2 = (h // 2) + (wall_height // 2)
+        let correctedDist = distance * Math.cos(rayAngle - angle);
+        let h = Math.min(canvas.height, canvas.height / (correctedDist + 0.0001));
+        let shade = Math.max(0, Math.floor(200 - correctedDist * (200 / flashRange)));
 
-            self.canvas.create_rectangle(x1, y1, x2, y2, fill=color_hex, outline="")
+        ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade*0.1)}, ${Math.floor(shade*0.1)})`;
+        ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
+    }
 
-        # 3D 귀신 시각화
-        dx = self.gx - self.px
-        dy = self.gy - self.py
-        sprite_dist = math.sqrt(dx * dx + dy * dy)
-        sprite_angle = math.atan2(dy, dx) - self.angle
+    // 귀신 렌더링
+    if (ghostHp > 0) {
+        let gdx = gx - px, gdy = gy - py;
+        let gDist = Math.sqrt(gdx*gdx + gdy*gdy);
+        let gAngle = Math.atan2(gdy, gdx) - angle;
 
-        # 회전 보정
-        while sprite_angle < -math.pi: sprite_angle += 2 * math.pi
-        while sprite_angle > math.pi: sprite_angle -= 2 * math.pi
+        while (gAngle < -Math.PI) gAngle += 2 * Math.PI;
+        while (gAngle > Math.PI) gAngle -= 2 * Math.PI;
 
-        if -self.fov / 2 < sprite_angle < self.fov / 2 and sprite_dist > 0.5:
-            screen_x = (w // 2) + int(math.tan(sprite_angle) * (w // 2))
-            size = min(400, int(h / sprite_dist))
-            
-            # 창백한 붉은 눈의 3D 형상
-            self.canvas.create_oval(
-                screen_x - size // 3, (h // 2) - size // 2,
-                screen_x + size // 3, (h // 2) + size // 2,
-                fill="#d0d0d0", outline="#aa0000", width=2
-            )
-            self.canvas.create_oval(
-                screen_x - size // 6, (h // 2) - size // 4,
-                screen_x - size // 10, (h // 2) - size // 6,
-                fill="red"
-            )
-            self.canvas.create_oval(
-                screen_x + size // 10, (h // 2) - size // 4,
-                screen_x + size // 6, (h // 2) - size // 6,
-                fill="red"
-            )
+        if (Math.abs(gAngle) < fov / 2 && gDist < flashRange) {
+            let sx = (canvas.width / 2) + Math.tan(gAngle) * (canvas.width / 2);
+            let size = Math.min(300, canvas.height / gDist);
 
-        # HUD UI 연출
-        self.canvas.create_text(
-            110, 30, text=f"스테미나: {int(self.stamina)}%", fill="white", font=("맑은 고딕", 12)
-        )
-        key_status = "열쇠 보유: O" if self.has_key else "열쇠 보유: X (미션: 노란 영역을 찾으세요)"
-        self.canvas.create_text(
-            200, 55, text=key_status, fill="yellow" if self.has_key else "gray", font=("맑은 고딕", 12)
-        )
+            ctx.fillStyle = ghostStun > 0 ? '#5588aa' : '#e0e0e0';
+            ctx.beginPath();
+            ctx.arc(sx, canvas.height/2, size/3, 0, Math.PI * 2);
+            ctx.fill();
 
-        # 게임 오버/점프스케어 화면
-        if self.jumpscare_timer > 0:
-            self.canvas.create_rectangle(0, 0, w, h, fill="darkred")
-            self.canvas.create_text(
-                w // 2, h // 2, text="귀신에게 잡혔습니다!", fill="black", font=("맑은 고딕", 32, "bold")
-            )
-            self.jumpscare_timer -= 1
-        elif self.escaped:
-            self.canvas.create_rectangle(0, 0, w, h, fill="black")
-            self.canvas.create_text(
-                w // 2, h // 2, text="축하합니다! 어둠 속에서 탈출했습니다!", fill="cyan", font=("맑은 고딕", 28)
-            )
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(sx - size/8, canvas.height/2 - size/10, size/15, 0, Math.PI * 2);
+            ctx.arc(sx + size/8, canvas.height/2 - size/10, size/15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
 
-    def game_loop(self):
-        self.process_movement()
-        self.update_ghost()
-        self.render_3d()
-        self.root.after(30, self.game_loop)
+    // 1인칭 단검(무기) 화면 렌더링
+    if (items.knife) {
+        ctx.save();
+        let attackOffset = isAttacking * 8; // 공격 시 찌르는 모션
+        ctx.fillStyle = '#aaa';
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2 + 80 - attackOffset, canvas.height - 20 - attackOffset);
+        ctx.lineTo(canvas.width/2 + 130 - attackOffset, canvas.height - 120 - attackOffset);
+        ctx.lineTo(canvas.width/2 + 150 - attackOffset, canvas.height - 100 - attackOffset);
+        ctx.fill();
+        ctx.restore();
+    }
+}
 
-# 앱 실행
-if __name__ == "__main__":
-    root = tk.Tk()
-    game = HorrorGame3D(root)
-    root.mainloop()
+function loop() {
+    update();
+    render();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
+"""
+
+components.html(game_html, height=540)
