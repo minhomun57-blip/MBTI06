@@ -1,166 +1,234 @@
-from ursina import *
-from ursina.prefabs.first_person_controller import FirstPersonController
+import tkinter as tk
+import math
 import random
 
-# 게임 앱 생성
-app = Ursina()
+class HorrorGame3D:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("어둠 속의 탈출 - 3D First Person")
+        self.root.geometry("800x600")
+        self.root.configure(bg="black")
 
-# 기본 화면 설정
-window.title = "3D 어둠 속의 탈출 (WASD 이동)"
-window.borderless = False
-window.fullscreen = False
-window.fps_counter.enabled = True
+        # 3D 캔버스 설정
+        self.canvas = tk.Canvas(root, width=800, height=600, bg="black", highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
 
-# 1. 환경 및 안개 설정 (어두운 분위기 연출)
-scene.fog_color = color.black
-scene.fog_density = (0.05, 0.25) # 자욱한 어둠 안개
+        # 플레이어 상태 (1인칭 시점 및 위치)
+        self.px = 2.0
+        self.py = 2.0
+        self.angle = 0.0  # 보는 각도(라디안)
+        self.fov = math.pi / 3  # 시야각(60도)
+        self.move_speed = 0.08
+        self.rot_speed = 0.05
+        self.stamina = 100.0
 
-# 조명 (매우 어두운 기본 조명)
-ambient_light = AmbientLight(color=color.rgb(10, 10, 15))
+        # 게임 진행 변수
+        self.has_key = False
+        self.game_over = False
+        self.escaped = False
+        self.jumpscare_timer = 0
 
-# 2. 1인칭 플레이어 컨트롤러 (WASD + 마우스 이동)
-player = FirstPersonController(
-    speed=5,
-    mouse_sensitivity=Vec2(40, 40),
-    position=(0, 1, -10)
-)
-player.cursor.color = color.red # 붉은 점 에임
+        # 맵 구조 (1: 벽, 0: 통로, 2: 열쇠, 3: 출구)
+        self.map_grid = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 2, 1],
+            [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
+            [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+            [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+            [1, 3, 1, 1, 1, 1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ]
 
-# 플레이어 손전등 (카메라에 고정된 조명)
-flashlight = SpotLight(parent=camera, position=(0.2, -0.2, 0), color=color.rgb(255, 240, 200))
-flashlight.look_at(camera.position + camera.forward * 10)
+        # 3D 귀신 위치
+        self.gx = 7.5
+        self.gy = 7.5
+        self.ghost_speed = 0.035
 
-# 3. 맵 구현 (폐쇄된 지하 복도/저택)
-# 바닥
-floor = Entity(
-    model='plane',
-    scale=(40, 1, 40),
-    color=color.dark_gray,
-    texture='white_cube',
-    collider='box'
-)
+        # 키 입력을 위한 상태 저장
+        self.keys = {}
+        self.root.bind("<KeyPress>", self.key_down)
+        self.root.bind("<KeyRelease>", self.key_up)
 
-# 천장
-ceiling = Entity(
-    model='plane',
-    scale=(40, 1, 40),
-    position=(0, 8, 0),
-    rotation=(180, 0, 0),
-    color=color.black,
-    collider='box'
-)
+        # 게임 루프 시작
+        self.game_loop()
 
-# 외벽 세우기
-walls = [
-    Entity(model='cube', scale=(40, 8, 1), position=(0, 4, 20), color=color.gray, collider='box'),
-    Entity(model='cube', scale=(40, 8, 1), position=(0, 4, -20), color=color.gray, collider='box'),
-    Entity(model='cube', scale=(1, 8, 40), position=(20, 4, 0), color=color.gray, collider='box'),
-    Entity(model='cube', scale=(1, 8, 40), position=(-20, 4, 0), color=color.gray, collider='box'),
-]
+    def key_down(self, event):
+        self.keys[event.keysym.lower()] = True
 
-# 내부 장애물 기둥
-for i in range(5):
-    rx = random.randint(-15, 15)
-    rz = random.randint(-15, 15)
-    Entity(model='cube', scale=(2, 8, 2), position=(rx, 4, rz), color=color.dark_gray, collider='box')
+    def key_up(self, event):
+        self.keys[event.keysym.lower()] = False
 
-# 4. 3D 귀신 (몬스터) 생성
-# 기괴하게 창백하고 길쭉한 형상의 3D 귀신
-ghost = Entity(
-    model='cube', # 실제 게임 시 3D 몬스터 모델(.obj/.gltf) 파일로 대체 가능
-    scale=(1.2, 3.5, 1.2),
-    position=(0, 1.75, 15),
-    color=color.rgb(220, 220, 220), # 창백한 색상
-    collider='box'
-)
+    def process_movement(self):
+        if self.game_over:
+            return
 
-# 귀신 눈빛 (붉은 빛)
-ghost_eye1 = Entity(parent=ghost, model='sphere', scale=0.15, position=(-0.25, 1.2, -0.5), color=color.red)
-ghost_eye2 = Entity(parent=ghost, model='sphere', scale=0.15, position=(0.25, 1.2, -0.5), color=color.red)
+        # Shift 입력 시 달리며 스테미나 소비
+        speed = self.move_speed
+        if self.keys.get("shift_l") or self.keys.get("shift_r"):
+            if self.stamina > 5:
+                speed *= 1.6
+                self.stamina -= 0.8
+        else:
+            self.stamina = min(100.0, self.stamina + 0.3)
 
-# 5. 미션 아이템 (탈출 열쇠)
-key = Entity(
-    model='sphere',
-    scale=0.4,
-    position=(15, 0.5, -15),
-    color=color.yellow,
-    collider='box'
-)
+        # 회전 (A, D 키 또는 좌우 화살표)
+        if self.keys.get("a") or self.keys.get("left"):
+            self.angle -= self.rot_speed
+        if self.keys.get("d") or self.keys.get("right"):
+            self.angle += self.rot_speed
 
-# UI 텍스트
-instructions = Text(
-    text="WASD: 이동 | Shift: 달리기 | 마우스: 둘러보기\n어둠 속에서 [노란색 열쇠]를 찾아 귀신을 피해 탈출하세요!",
-    origin=(0, 4),
-    scale=1.2,
-    color=color.white
-)
+        # 이동 계산 (W, S 키)
+        dx = math.cos(self.angle) * speed
+        dy = math.sin(self.angle) * speed
 
-game_over_text = Text(text="", origin=(0, 0), scale=2, color=color.red)
+        if self.keys.get("w") or self.keys.get("up"):
+            if self.map_grid[int(self.py)][int(self.px + dx)] == 0:
+                self.px += dx
+            if self.map_grid[int(self.py + dy)][int(self.px)] == 0:
+                self.py += dy
+        if self.keys.get("s") or self.keys.get("down"):
+            if self.map_grid[int(self.py)][int(self.px - dx)] == 0:
+                self.px -= dx
+            if self.map_grid[int(self.py - dy)][int(self.px)] == 0:
+                self.py -= dy
 
-has_key = False
-ghost_speed = 2.2
+        # 열쇠 획득 체크
+        ix, iy = int(self.px), int(self.py)
+        if self.map_grid[iy][ix] == 2:
+            self.has_key = True
+            self.map_grid[iy][ix] = 0
 
-# 6. 실시간 게임 루프 (매 프레임 업데이트)
-def update():
-    global has_key, ghost_speed
+        # 탈출 체크
+        if self.map_grid[iy][ix] == 3 and self.has_key:
+            self.escaped = True
+            self.game_over = True
 
-    if not player.enabled:
-        return
+    def update_ghost(self):
+        if self.game_over:
+            return
 
-    # 달리기 기능 (Left Shift)
-    if held_keys['left shift']:
-        player.speed = 8
-    else:
-        player.speed = 5
+        # 귀신이 플레이어를 실시간 추격
+        dx = self.px - self.gx
+        dy = self.py - self.gy
+        dist = math.sqrt(dx * dx + dy * dy)
 
-    # 귀신이 플레이어를 향해 천천히 추격 (3D 위치 계산)
-    ghost.look_at(player.position)
-    # 귀신의 y축 회전만 유지 (기우러짐 방지)
-    ghost.rotation_x = 0
-    ghost.rotation_z = 0
-    
-    # 플레이어 쪽으로 이동
-    direction = (player.position - ghost.position).normalized()
-    ghost.position += direction * ghost_speed * time.dt
+        if dist > 0.1:
+            self.gx += (dx / dist) * self.ghost_speed
+            self.gy += (dy / dist) * self.ghost_speed
 
-    # 귀신 기괴하게 떨리는 무서운 효과
-    ghost.x += random.uniform(-0.03, 0.03)
+        # 잡혔을 때 게임 오버
+        if dist < 0.6:
+            self.jumpscare_timer = 15
+            self.game_over = True
 
-    # 거리 계산
-    dist_to_ghost = distance(player.position, ghost.position)
-    
-    # 플레이어와 귀신이 가까워지면 심장박동처럼 카메라 흔들림 연출
-    if dist_to_ghost < 8:
-        camera.x = random.uniform(-0.05, 0.05)
-        camera.y = random.uniform(-0.05, 0.05)
-        ghost_speed = 3.5 # 가까워지면 더 빠르게 추격
-    else:
-        ghost_speed = 2.2
+    def render_3d(self):
+        self.canvas.delete("all")
+        w, h = 800, 600
+        num_rays = 80  # 가로 레이캐스팅 광선 수
 
-    # 잡아먹혔을 때 (게임 오버)
-    if dist_to_ghost < 1.8:
-        player.enabled = False
-        mouse.locked = False
-        game_over_text.text = "귀신에게 잡혔습니다...\n[ Esc를 눌러 종료 ]"
+        # 천장/바닥 어두운 배경 연출
+        self.canvas.create_rectangle(0, 0, w, h // 2, fill="#0a0a0a")
+        self.canvas.create_rectangle(0, h // 2, w, h, fill="#141414")
 
-    # 열쇠 획득 체크
-    if not has_key and distance(player.position, key.position) < 1.5:
-        has_key = True
-        destroy(key)
-        instructions.text = "열쇠를 찾았습니다! 출발 지점(Z: -18) 문으로 탈출하세요!"
-        instructions.color = color.green
+        # 레이캐스팅(Raycasting)으로 3D 벽 렌더링
+        for i in range(num_rays):
+            ray_angle = (self.angle - self.fov / 2) + (i / num_rays) * self.fov
+            distance_to_wall = 0.0
+            hit_wall = False
+            
+            cos_a = math.cos(ray_angle)
+            sin_a = math.sin(ray_angle)
 
-    # 탈출 성공 체크
-    if has_key and player.z < -18:
-        player.enabled = False
-        mouse.locked = False
-        game_over_text.text = "축하합니다! 어둠을 뚫고 탈출했습니다!"
-        game_over_text.color = color.cyan
+            while not hit_wall and distance_to_wall < 10.0:
+                distance_to_wall += 0.05
+                test_x = int(self.px + cos_a * distance_to_wall)
+                test_y = int(self.py + sin_a * distance_to_wall)
 
-# 키 입력 처리
-def input(key_name):
-    if key_name == 'escape':
-        application.quit()
+                if test_x < 0 or test_x >= 10 or test_y < 0 or test_y >= 10:
+                    hit_wall = True
+                    distance_to_wall = 10.0
+                elif self.map_grid[test_y][test_x] == 1:
+                    hit_wall = True
 
-# 게임 실행
-app.run()
+            # 어두운 시야 거리 감쇄 계산 (손전등 효과)
+            corrected_dist = distance_to_wall * math.cos(ray_angle - self.angle)
+            wall_height = min(h, int(h / (corrected_dist + 0.0001)))
+            
+            # 음영 처리
+            shade = max(0, int(200 - (corrected_dist * 20)))
+            color_hex = f"#{shade:02x}{int(shade*0.2):02x}{int(shade*0.2):02x}"
+
+            x1 = i * (w / num_rays)
+            x2 = (i + 1) * (w / num_rays)
+            y1 = (h // 2) - (wall_height // 2)
+            y2 = (h // 2) + (wall_height // 2)
+
+            self.canvas.create_rectangle(x1, y1, x2, y2, fill=color_hex, outline="")
+
+        # 3D 귀신 시각화
+        dx = self.gx - self.px
+        dy = self.gy - self.py
+        sprite_dist = math.sqrt(dx * dx + dy * dy)
+        sprite_angle = math.atan2(dy, dx) - self.angle
+
+        # 회전 보정
+        while sprite_angle < -math.pi: sprite_angle += 2 * math.pi
+        while sprite_angle > math.pi: sprite_angle -= 2 * math.pi
+
+        if -self.fov / 2 < sprite_angle < self.fov / 2 and sprite_dist > 0.5:
+            screen_x = (w // 2) + int(math.tan(sprite_angle) * (w // 2))
+            size = min(400, int(h / sprite_dist))
+            
+            # 창백한 붉은 눈의 3D 형상
+            self.canvas.create_oval(
+                screen_x - size // 3, (h // 2) - size // 2,
+                screen_x + size // 3, (h // 2) + size // 2,
+                fill="#d0d0d0", outline="#aa0000", width=2
+            )
+            self.canvas.create_oval(
+                screen_x - size // 6, (h // 2) - size // 4,
+                screen_x - size // 10, (h // 2) - size // 6,
+                fill="red"
+            )
+            self.canvas.create_oval(
+                screen_x + size // 10, (h // 2) - size // 4,
+                screen_x + size // 6, (h // 2) - size // 6,
+                fill="red"
+            )
+
+        # HUD UI 연출
+        self.canvas.create_text(
+            110, 30, text=f"스테미나: {int(self.stamina)}%", fill="white", font=("맑은 고딕", 12)
+        )
+        key_status = "열쇠 보유: O" if self.has_key else "열쇠 보유: X (미션: 노란 영역을 찾으세요)"
+        self.canvas.create_text(
+            200, 55, text=key_status, fill="yellow" if self.has_key else "gray", font=("맑은 고딕", 12)
+        )
+
+        # 게임 오버/점프스케어 화면
+        if self.jumpscare_timer > 0:
+            self.canvas.create_rectangle(0, 0, w, h, fill="darkred")
+            self.canvas.create_text(
+                w // 2, h // 2, text="귀신에게 잡혔습니다!", fill="black", font=("맑은 고딕", 32, "bold")
+            )
+            self.jumpscare_timer -= 1
+        elif self.escaped:
+            self.canvas.create_rectangle(0, 0, w, h, fill="black")
+            self.canvas.create_text(
+                w // 2, h // 2, text="축하합니다! 어둠 속에서 탈출했습니다!", fill="cyan", font=("맑은 고딕", 28)
+            )
+
+    def game_loop(self):
+        self.process_movement()
+        self.update_ghost()
+        self.render_3d()
+        self.root.after(30, self.game_loop)
+
+# 앱 실행
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = HorrorGame3D(root)
+    root.mainloop()
