@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="낡은 집에서의 탈출 - 3D", layout="wide")
 
 st.title("🏚️ 낡은 집에서의 탈출 (Old House Escape)")
-st.caption("화면 클릭 후 드래그 또는 마우스 이동으로 시점 회전 | W/S/A/D: 이동 | E (꾹 누르기): 달리기")
+st.caption("조작 방법 | W/S/A/D: 이동 | ← / → (방향키): 시점 회전 | E (꾹 누르기): 달리기 | 마우스 클릭: 공격/포인터 잠금")
 
 game_html = """
 <!DOCTYPE html>
@@ -15,17 +15,16 @@ game_html = """
         #canvas { width: 100%; height: 530px; display: block; cursor: pointer; }
         
         #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
-        .bar-container { width: 180px; height: 16px; background: rgba(255,255,255,0.2); border: 2px solid #333; border-radius: 8px; overflow: hidden; }
+        .bar-container { width: 180px; height: 16px; background: rgba(255,255,255,0.15); border: 2px solid #444; border-radius: 8px; overflow: hidden; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
-        #hp-bar { background: linear-gradient(90deg, #ff3333, #ff6666); }
-        #stamina-bar { background: linear-gradient(90deg, #33cc33, #66ff66); }
+        #hp-bar { background: linear-gradient(90deg, #cc0000, #ff4d4d); }
+        #stamina-bar { background: linear-gradient(90deg, #28a745, #5cdb5c); }
 
         #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 5; }
-        .slot { width: 55px; height: 55px; border: 2px solid #555; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 5px; text-align: center; }
+        .slot { width: 55px; height: 55px; border: 2px solid #444; background: rgba(0,0,0,0.85); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 5px; text-align: center; }
         #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 28px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; z-index: 5; }
         #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; z-index: 5; }
 
-        /* 화면을 꽉 채우는 점프스케어 귀신 연출 */
         #jumpscare {
             display: none;
             position: absolute;
@@ -42,7 +41,7 @@ game_html = """
             background: radial-gradient(circle, #ff0000 0%, #330000 70%, #000000 100%);
             border-radius: 50%;
             position: relative;
-            box-shadow: 0 0 50px #ff0000;
+            box-shadow: 0 0 60px #ff0000;
             animation: shake 0.05s infinite alternate;
         }
         .eye {
@@ -81,8 +80,8 @@ game_html = """
         }
 
         @keyframes shake {
-            0% { transform: translate(3px, 3px) scale(1.1); }
-            100% { transform: translate(-3px, -3px) scale(1.15); }
+            0% { transform: translate(4px, 4px) scale(1.1); }
+            100% { transform: translate(-4px, -4px) scale(1.15); }
         }
     </style>
 </head>
@@ -100,8 +99,8 @@ game_html = """
     </div>
 
     <div id="room-info">
-        <div style="color:gold; font-weight:bold;">장소: 낡은 집 안채</div>
-        <div>목표: 열쇠를 찾아 탈출하라</div>
+        <div style="color:gold; font-weight:bold;">장소: 오래된 저택 복도</div>
+        <div>목표: 가구 사이를 수색해 열쇠를 찾고 탈출하라</div>
     </div>
     
     <div id="inventory">
@@ -111,7 +110,7 @@ game_html = """
         <div class="slot" id="slot4">[4]<br>녹슨 열쇠</div>
     </div>
 
-    <div id="msg">화면을 클릭하면 시점 조작이 활성화됩니다</div>
+    <div id="msg">게임 화면을 클릭해 시작하세요</div>
     <div id="jumpscare">
         <div id="scare-face">
             <div class="eye left"><div class="pupil"></div></div>
@@ -156,17 +155,16 @@ let gameOver = false;
 let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
 let isAttacking = 0;
 
-// 귀신 위치 설정
 let ghosts = [
     { x: 1.5, y: 1.5, hp: 80, stun: 0 },
     { x: 13.5, y: 13.5, hp: 80, stun: 0 }
 ];
 
 const keys = {};
-let isMouseDown = false;
-let lastMouseX = 0;
 
 function parseKey(k) {
+    if (k === 'ArrowLeft') return 'left';
+    if (k === 'ArrowRight') return 'right';
     k = k.toLowerCase();
     if (k === 'ㅈ') return 'w';
     if (k === 'ㄴ') return 's';
@@ -190,29 +188,11 @@ window.addEventListener('keyup', e => {
     keys[k] = false;
 });
 
-// 화면 회전을 위한 마우스 이벤트 (PointerLock + Drag 방식 둘 다 지원)
-canvas.addEventListener('mousedown', e => {
-    isMouseDown = true;
-    lastMouseX = e.clientX;
-    if (document.pointerLockElement !== canvas) {
-        canvas.requestPointerLock();
-        document.getElementById('msg').innerText = "";
-    } else if (items.knife && isAttacking === 0 && !gameOver) {
+canvas.addEventListener('click', () => {
+    document.getElementById('msg').innerText = "";
+    if (items.knife && isAttacking === 0 && !gameOver) {
         isAttacking = 10;
         checkAttackHit();
-    }
-});
-
-window.addEventListener('mouseup', () => { isMouseDown = false; });
-
-window.addEventListener('mousemove', e => {
-    if (gameOver) return;
-    if (document.pointerLockElement === canvas) {
-        angle += e.movementX * 0.004;
-    } else if (isMouseDown) {
-        let deltaX = e.clientX - lastMouseX;
-        angle += deltaX * 0.006;
-        lastMouseX = e.clientX;
     }
 });
 
@@ -237,10 +217,10 @@ function updateUI() {
     document.getElementById('stamina-bar').style.width = Math.max(0, stamina) + "%";
     document.getElementById('weapon').innerText = items.knife ? "녹슨 단검 (클릭: 공격)" : "맨손";
     
-    document.getElementById('slot1').style.borderColor = items.potion > 0 ? "lime" : "#555";
-    document.getElementById('slot2').style.borderColor = items.battery > 0 ? "yellow" : "#555";
-    document.getElementById('slot3').style.borderColor = items.talisman > 0 ? "cyan" : "#555";
-    document.getElementById('slot4').style.borderColor = items.key ? "gold" : "#555";
+    document.getElementById('slot1').style.borderColor = items.potion > 0 ? "lime" : "#444";
+    document.getElementById('slot2').style.borderColor = items.battery > 0 ? "yellow" : "#444";
+    document.getElementById('slot3').style.borderColor = items.talisman > 0 ? "cyan" : "#444";
+    document.getElementById('slot4').style.borderColor = items.key ? "gold" : "#444";
 }
 
 function isSolid(x, y) {
@@ -251,13 +231,15 @@ function isSolid(x, y) {
 function triggerJumpscare() {
     gameOver = true;
     document.getElementById('jumpscare').style.display = 'flex';
-    if (document.exitPointerLock) {
-        document.exitPointerLock();
-    }
 }
 
 function update() {
     if (gameOver) return;
+
+    // 방향키(←, →)를 이용한 시점 회전
+    const rotSpeed = 0.04;
+    if (keys['left']) angle -= rotSpeed;
+    if (keys['right']) angle += rotSpeed;
 
     let speed = 0.04;
     let isMoving = keys['w'] || keys['s'] || keys['a'] || keys['d'];
@@ -291,7 +273,6 @@ function update() {
     }
     updateUI();
 
-    // 귀신 추격 AI (속도를 0.007로 대폭 축소)
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         if (g.stun > 0) {
@@ -300,7 +281,7 @@ function update() {
             let gdx = px - g.x, gdy = py - g.y;
             let dist = Math.sqrt(gdx*gdx + gdy*gdy);
             if (dist > 0.1) {
-                g.x += (gdx / dist) * 0.007; // 둔화된 이동 속도
+                g.x += (gdx / dist) * 0.007;
                 g.y += (gdy / dist) * 0.007;
             }
             if (dist < 0.6) {
@@ -318,32 +299,37 @@ function update() {
 function renderFurniture(type, sx, canvasHeight, size) {
     ctx.save();
     if (type === 7) {
-        ctx.fillStyle = '#4a2e18';
+        ctx.fillStyle = '#3a200d';
         ctx.fillRect(sx - size/2, canvasHeight/2, size, size/2);
+        ctx.fillStyle = '#221307';
+        ctx.fillRect(sx - size/2, canvasHeight/2 + size/4, size, size/8);
     } else if (type === 8) {
-        ctx.fillStyle = '#3d2514';
+        ctx.fillStyle = '#2e1c0c';
         ctx.fillRect(sx - size/2, canvasHeight/2 + size/6, size, size/3);
     } else if (type === 9) {
-        ctx.fillStyle = '#2b1a0e';
+        ctx.fillStyle = '#221208';
         ctx.fillRect(sx - size/3, canvasHeight/2 - size/6, size/1.5, size/1.2);
     } else if (type === 10) {
-        ctx.fillStyle = '#5c3a21';
+        ctx.fillStyle = '#422814';
         ctx.fillRect(sx - size/4, canvasHeight/2 + size/8, size/2, size/2);
     } else if (type === 11) {
-        ctx.fillStyle = '#1f1208';
+        ctx.fillStyle = '#170c05';
         ctx.fillRect(sx - size/2.5, canvasHeight/2 - size/2, size/1.25, size);
     }
     ctx.restore();
 }
 
 function render() {
-    ctx.fillStyle = '#080604';
+    // 천장 & 바닥 렌더링 (저택 나무 바닥 패턴 표현)
+    ctx.fillStyle = '#050403';
     ctx.fillRect(0, 0, canvas.width, canvas.height/2);
-    ctx.fillStyle = '#120d08';
+    
+    // 바닥 선 연출
+    ctx.fillStyle = '#0f0b07';
     ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
     const fov = Math.PI / 3;
-    const numRays = 130;
+    const numRays = 160;
     const w = canvas.width / numRays;
 
     for (let i = 0; i < numRays; i++) {
@@ -351,11 +337,14 @@ function render() {
         let distance = 0;
         let hit = false;
         let hitType = 1;
+        let hitX = 0, hitY = 0;
 
         while (!hit && distance < flashRange) {
-            distance += 0.05;
-            let tx = Math.floor(px + Math.cos(rayAngle) * distance);
-            let ty = Math.floor(py + Math.sin(rayAngle) * distance);
+            distance += 0.04;
+            let rx = px + Math.cos(rayAngle) * distance;
+            let ry = py + Math.sin(rayAngle) * distance;
+            let tx = Math.floor(rx);
+            let ty = Math.floor(ry);
 
             if (tx < 0 || tx >= 15 || ty < 0 || ty >= 15) {
                 hit = true;
@@ -363,21 +352,36 @@ function render() {
             } else if (isSolid(tx, ty)) {
                 hit = true;
                 hitType = houseMap[ty][tx];
+                hitX = rx - tx;
+                hitY = ry - ty;
             }
         }
 
         let correctedDist = distance * Math.cos(rayAngle - angle);
         let h = Math.min(canvas.height, canvas.height / (correctedDist + 0.0001));
-        let shade = Math.max(0, Math.floor(160 - correctedDist * (160 / flashRange)));
+        let shade = Math.max(0, Math.floor(180 - correctedDist * (180 / flashRange)));
+
+        // 벽면 질감 연출 (저택 몰딩 및 기둥 느낌)
+        let edge = (hitX < 0.05 || hitX > 0.95 || hitY < 0.05 || hitY > 0.95) ? 0.7 : 1.0;
+        let r = Math.floor(shade * 0.5 * edge);
+        let g = Math.floor(shade * 0.25 * edge);
+        let b = Math.floor(shade * 0.15 * edge);
 
         if (hitType === 1) {
-            ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade*0.4)}, ${Math.floor(shade*0.2)})`;
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         } else {
-            ctx.fillStyle = `rgb(${Math.floor(shade*0.6)}, ${Math.floor(shade*0.3)}, ${Math.floor(shade*0.1)})`;
+            ctx.fillStyle = `rgb(${Math.floor(r*0.7)}, ${Math.floor(g*0.7)}, ${Math.floor(b*0.7)})`;
         }
-        ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
+        
+        let topY = (canvas.height - h) / 2;
+        ctx.fillRect(i * w, topY, w + 1, h);
+
+        // 벽 하단 몰딩 선 연출
+        ctx.fillStyle = `rgba(0,0,0,${Math.min(1, correctedDist/8)})`;
+        ctx.fillRect(i * w, topY + h - (h*0.1), w + 1, h*0.1);
     }
 
+    // 가구 배치
     for (let y = 0; y < 15; y++) {
         for (let x = 0; x < 15; x++) {
             let cell = houseMap[y][x];
@@ -399,6 +403,7 @@ function render() {
         }
     }
 
+    // 귀신 연출 강화 (붉은 일렁임 효과)
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -413,24 +418,30 @@ function render() {
             let size = Math.min(380, canvas.height / gDist);
 
             ctx.save();
-            ctx.fillStyle = g.stun > 0 ? '#00ffff' : '#ff1a1a';
+            // 외곽 아우라 연출
+            let grad = ctx.createRadialGradient(sx, canvas.height/2, 5, sx, canvas.height/2, size/1.8);
+            grad.addColorStop(0, g.stun > 0 ? 'rgba(0,255,255,0.8)' : 'rgba(255,0,0,0.8)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(sx, canvas.height/2 - size/6, size/2.5, 0, Math.PI * 2);
+            ctx.arc(sx, canvas.height/2, size/1.8, 0, Math.PI * 2);
             ctx.fill();
 
+            // 유령 눈빛
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(sx - size/8, canvas.height/2 - size/4, size/12, 0, Math.PI * 2);
-            ctx.arc(sx + size/8, canvas.height/2 - size/4, size/12, 0, Math.PI * 2);
+            ctx.arc(sx - size/8, canvas.height/2 - size/6, size/14, 0, Math.PI * 2);
+            ctx.arc(sx + size/8, canvas.height/2 - size/6, size/14, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
     });
 
+    // 공격 칼 애니메이션
     if (items.knife) {
         ctx.save();
         let attackOffset = isAttacking * 9;
-        ctx.fillStyle = '#bbb';
+        ctx.fillStyle = '#ccc';
         ctx.beginPath();
         ctx.moveTo(canvas.width/2 + 90 - attackOffset, canvas.height - 10 - attackOffset);
         ctx.lineTo(canvas.width/2 + 140 - attackOffset, canvas.height - 130 - attackOffset);
