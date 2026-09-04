@@ -1,10 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="🏚️ 저주받은 저택 - 방 & 아이템 강화 에디션", layout="wide")
+st.set_page_config(page_title="🏚️ 저주받은 저택 - R키 상호작용 에디션", layout="wide")
 
 st.title("🏚️ 저주받은 저택: 방과 아이템의 비밀")
-st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | 1,2,3: 아이템 사용 | 클릭: 무기 공격")
+st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | R: 상호작용(문 열기/아이템 획득) | 1,2,3: 아이템 사용 | 클릭: 공격")
 
 horror_game_html = """
 <!DOCTYPE html>
@@ -85,7 +85,7 @@ horror_game_html = """
 
     <div id="room-info">
         <div style="color:#ff3333; font-weight:bold;" id="current-room-name">현재 위치: 중앙 복도</div>
-        <div>문(나무 형태)을 지나 각 방 탐색 가능</div>
+        <div>문이나 아이템 근처에서 [R] 키를 누르세요</div>
     </div>
     
     <div id="inventory">
@@ -154,6 +154,16 @@ function playSound(type) {
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.18);
+    } else if (type === 'door') {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.linearRampToValueAtTime(60, now + 0.3);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 0.3);
     } else if (type === 'jumpscare') {
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
@@ -173,7 +183,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 580;
 
-// 벽 텍스처 (0: 복도, 1: 벽, 2: 일반 방 문, 3: 탈출문)
 const wallTex = document.createElement('canvas');
 wallTex.width = 64; wallTex.height = 64;
 const wCtx = wallTex.getContext('2d');
@@ -187,7 +196,6 @@ for(let i=0; i<64; i+=16) {
     }
 }
 
-// 방 문(Door) 텍스처
 const doorTex = document.createElement('canvas');
 doorTex.width = 64; doorTex.height = 64;
 const dCtx = doorTex.getContext('2d');
@@ -197,12 +205,12 @@ dCtx.fillRect(2, 2, 60, 60);
 dCtx.fillStyle = '#5c3a1e';
 dCtx.fillRect(6, 6, 24, 24); dCtx.fillRect(34, 6, 24, 24);
 dCtx.fillRect(6, 34, 24, 24); dCtx.fillRect(34, 34, 24, 24);
-dCtx.fillStyle = '#ffaa00'; // 황금 문고리
+dCtx.fillStyle = '#ffaa00';
 dCtx.beginPath(); dCtx.arc(10, 32, 3, 0, Math.PI*2); dCtx.fill();
 
 let houseMap = [];
 let MAP_SIZE = 21;
-let px = 10.5, py = 10.5; // 중앙 복도에서 시작
+let px = 10.5, py = 10.5;
 let angle = 0;
 let hp = 100;
 let stamina = 100;
@@ -218,7 +226,6 @@ let animTimer = 0;
 
 const fov = Math.PI * 0.42; 
 
-// 0: 복도/빈공간, 1: 벽, 2: 방 문, 3: 최종 탈출문
 const initialMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
@@ -261,7 +268,6 @@ function initGame() {
         { x: 2.5, y: 18.5, hp: 100, stun: 0 }
     ];
 
-    // 방 내부 구석에 위치시킨 입체적 아이템
     worldItems = [
         { x: 2.5, y: 1.5, type: 'knife', name: '녹슨 단검 (서재)' },
         { x: 18.5, y: 1.5, type: 'potion', name: '의용 회복제 (응급실)' },
@@ -272,7 +278,7 @@ function initGame() {
     ];
 
     document.getElementById('jumpscare').style.display = 'none';
-    document.getElementById('msg').innerText = "저택의 문들을 통해 각 방을 수색하고 아이템을 찾으세요";
+    document.getElementById('msg').innerText = "문 앞이나 아이템 근처에서 [R] 키를 눌러 상호작용하세요";
     document.getElementById('msg').style.color = "#ff3333";
     updateUI();
 }
@@ -289,7 +295,59 @@ function parseKey(k) {
     if (k === 'ㅁ') return 'a';
     if (k === 'ㅇ') return 'd';
     if (k === 'ㄷ') return 'e';
+    if (k === 'ㄱ') return 'r';
     return k;
+}
+
+// R 키를 통한 상호작용 처리 함수
+function handleInteract() {
+    if (gameOver) return;
+
+    // 1. 플레이어 앞 정면 위치 계산
+    let checkDist = 1.2;
+    let targetX = Math.floor(px + Math.cos(angle) * checkDist);
+    let targetY = Math.floor(py + Math.sin(angle) * checkDist);
+
+    // 2. 문(2번) 또는 탈출문(3번) 상호작용
+    if (targetX >= 0 && targetX < MAP_SIZE && targetY >= 0 && targetY < MAP_SIZE) {
+        let tile = houseMap[targetY][targetX];
+        if (tile === 2) {
+            houseMap[targetY][targetX] = 0; // 문 개방
+            playSound('door');
+            showTmpMsg("🚪 문을 열었습니다.");
+            return;
+        } else if (tile === 3) {
+            if (items.key) {
+                gameOver = true;
+                playSound('door');
+                document.getElementById('msg').innerText = "🚪 열쇠로 잠긴 문을 열고 탈출에 성공했습니다!";
+                document.getElementById('msg').style.color = "gold";
+            } else {
+                showTmpMsg("🔒 문이 굳게 잠겨 있습니다. 피묻은 열쇠가 필요합니다.");
+            }
+            return;
+        }
+    }
+
+    // 3. 근처 아이템 상호작용
+    let picked = false;
+    worldItems.forEach((item, idx) => {
+        let dist = Math.sqrt((px - item.x)**2 + (py - item.y)**2);
+        if (dist < 1.5 && !picked) {
+            playSound('item');
+            if (item.type === 'key') { items.key = true; showTmpMsg("🔑 피묻은 열쇠를 습득했습니다! 탈출문(황금색)을 찾으세요."); }
+            if (item.type === 'knife') { items.knife = true; showTmpMsg("🗡️ 녹슨 단검을 습득했습니다."); }
+            if (item.type === 'potion') { items.potion++; showTmpMsg("💊 의용 회복제를 습득했습니다."); }
+            if (item.type === 'battery') { items.battery++; showTmpMsg("🔋 배터리를 습득했습니다."); }
+            worldItems.splice(idx, 1);
+            updateUI();
+            picked = true;
+        }
+    });
+
+    if (!picked) {
+        showTmpMsg("상호작용할 대상이 가까이에 없습니다.");
+    }
 }
 
 window.addEventListener('keydown', e => {
@@ -297,6 +355,9 @@ window.addEventListener('keydown', e => {
     keys[k] = true;
     
     if (!gameOver) {
+        if (k === 'r') {
+            handleInteract();
+        }
         if (e.key === '1' && items.potion > 0) { 
             hp = Math.min(100, hp + 60); items.potion--; 
             playSound('item'); showTmpMsg("💊 체력을 회복했습니다."); updateUI(); 
@@ -376,7 +437,7 @@ function updateUI() {
 function isSolid(x, y) {
     if (x < 0 || x >= MAP_SIZE || y < 0 || y >= MAP_SIZE) return true;
     let tile = houseMap[Math.floor(y)][Math.floor(x)];
-    return tile === 1; // 1번 벽만 통과 불가, 2번 문/0번 빈공간은 통과 가능
+    return tile === 1 || tile === 2; // 벽(1) 및 닫힌 문(2)은 통과 불가 (R키로 열어야 이동 가능)
 }
 
 function triggerJumpscare() {
@@ -407,7 +468,6 @@ function update() {
     if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
     if (!isSolid(px, py + dy + Math.sign(dy)*margin)) py += dy;
 
-    // 현재 방 위치 탐지 및 UI 변경
     let curX = Math.floor(px), curY = Math.floor(py);
     let roomTxt = "중앙 복도";
     if (curX < 4 && curY < 4) roomTxt = "북서쪽 서재 (단검 위치)";
@@ -415,29 +475,6 @@ function update() {
     else if (curX < 4 && curY > 16) roomTxt = "남서쪽 침실 (부적 위치)";
     else if (curX > 16 && curY > 16) roomTxt = "남동쪽 지하 밀실 (열쇠 위치)";
     document.getElementById('current-room-name').innerText = "현재 위치: " + roomTxt;
-
-    worldItems.forEach((item, idx) => {
-        let dist = Math.sqrt((px - item.x)**2 + (py - item.y)**2);
-        if (dist < 0.7) {
-            playSound('item');
-            if (item.type === 'key') { items.key = true; showTmpMsg("🔑 피묻은 열쇠를 습득했습니다! 탈출문(황금색)을 찾으세요."); }
-            if (item.type === 'knife') { items.knife = true; showTmpMsg("🗡️ 녹슨 단검을 습득했습니다."); }
-            if (item.type === 'potion') { items.potion++; showTmpMsg("💊 의용 회복제를 습득했습니다."); }
-            if (item.type === 'battery') { items.battery++; showTmpMsg("🔋 배터리를 습득했습니다."); }
-            worldItems.splice(idx, 1);
-            updateUI();
-        }
-    });
-
-    if (houseMap[Math.floor(py)][Math.floor(px)] === 3) {
-        if (items.key) {
-            gameOver = true;
-            document.getElementById('msg').innerText = "🚪 열쇠로 잠긴 문을 열고 탈출에 성공했습니다!";
-            document.getElementById('msg').style.color = "gold";
-        } else {
-            showTmpMsg("🔒 문이 굳게 잠겨 있습니다. 피묻은 열쇠가 필요합니다.");
-        }
-    }
 
     let minDist = 999;
     ghosts.forEach(g => {
@@ -471,13 +508,11 @@ function update() {
     if (isAttacking > 0) isAttacking--;
 }
 
-// 아이템 실체감 있는 3D 오프셋 렌더링
 function draw3DItem(type, sx, sy, size) {
     ctx.save();
     ctx.translate(sx, sy);
 
     if (type === 'key') {
-        // 열쇠 - 3D 입체 금속 스타일
         ctx.fillStyle = '#b38f00'; ctx.beginPath(); ctx.arc(3, -size/3 + 3, size/3.2, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0, -size/3, size/3.2, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#1a1100'; ctx.beginPath(); ctx.arc(0, -size/3, size/6, 0, Math.PI * 2); ctx.fill();
@@ -488,7 +523,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.fillRect(size/12, size/2.2, size/4, size/8);
 
     } else if (type === 'knife') {
-        // 단검 - 실물 스타일 손잡이와 검신
         ctx.fillStyle = '#888888';
         ctx.beginPath();
         ctx.moveTo(0, -size/1.5);
@@ -511,7 +545,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.fillRect(-size/8, size/6 + size/10, size/4, size/2.5);
 
     } else if (type === 'potion') {
-        // 약병 - 실감나는 유리 병 및 회복 액체
         ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
         ctx.beginPath(); ctx.arc(0, size/4, size/2.2, 0, Math.PI * 2); ctx.fill();
         
@@ -525,7 +558,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.fillRect(-size/6, -size/3, size/3, size/6);
 
     } else if (type === 'battery') {
-        // 배터리 - 주황/검정 산업용 배터리 실물 느낌
         ctx.fillStyle = '#222222';
         ctx.fillRect(-size/3, -size/3, size/1.5, size/1.2);
         ctx.fillStyle = '#ff6600';
@@ -593,12 +625,10 @@ function render() {
             ctx.fillStyle = `rgba(230, 190, 60, ${shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
         } else if (hitType === 2) {
-            // 방 문(Door) 텍스처 렌더링
             ctx.drawImage(doorTex, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
             ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
         } else {
-            // 일반 벽 텍스처 렌더링
             ctx.drawImage(wallTex, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
             ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
@@ -628,7 +658,7 @@ function render() {
                 ctx.font = `bold ${Math.max(11, Math.floor(size/2.2))}px sans-serif`;
                 ctx.textAlign = "center";
                 ctx.shadowColor = "#000000"; ctx.shadowBlur = 6;
-                ctx.fillText(item.name, sx, centerY - size/1.2);
+                ctx.fillText(item.name + " [R 키로 습득]", sx, centerY - size/1.2);
                 ctx.restore();
             }
         }
