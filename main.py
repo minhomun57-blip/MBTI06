@@ -1,19 +1,20 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="낡은 집에서의 탈출 - 개선판", layout="wide")
+st.set_page_config(page_title="낡은 집에서의 탈출 - 수정판", layout="wide")
 
 st.title("🏚️ 낡은 집에서의 탈출 (Old House Escape)")
-st.caption("조작 방법 | W/A/S/D: 이동 | 마우스: 시점 회전 (화면 클릭 시 시작) | E: 달리기 | 1,2,3: 아이템 사용 | 좌클릭: 단검 공격")
+st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | 1,2,3: 아이템 사용 | 클릭: 공격")
 
-improved_game_html = """
+fixed_game_html = """
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; user-select: none; }
-        #canvas { width: 100%; height: 550px; display: block; cursor: crosshair; }
+        #canvas { width: 100%; height: 550px; display: block; cursor: grab; }
+        #canvas:active { cursor: grabbing; }
         
         #ui { position: absolute; top: 15px; left: 15px; color: #e0e0e0; text-shadow: 2px 2px 4px #000; font-size: 13px; display: flex; flex-direction: column; gap: 8px; z-index: 5; pointer-events: none; }
         .bar-container { width: 200px; height: 14px; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 3px; overflow: hidden; }
@@ -50,7 +51,7 @@ improved_game_html = """
         .mouth { position: absolute; bottom: 12%; left: 15%; width: 70%; height: 120px; background: #050000; border-radius: 10px 10px 60px 60px; border: 3px solid #600; overflow: hidden; }
         .teeth { width: 100%; height: 20px; background: repeating-linear-gradient(90deg, #ddd, #ddd 10px, #000 10px, #000 15px); }
         
-        #scare-text { color: #ff0000; font-size: 30px; font-weight: 900; margin-top: 25px; text-shadow: 0 0 15px #ff0000; }
+        #scare-text { color: #ff0000; font-size: 26px; font-weight: 900; margin-top: 25px; text-shadow: 0 0 15px #ff0000; }
         #restart-btn { margin-top: 20px; padding: 12px 28px; font-size: 15px; background: #111; color: #ff4d4d; border: 1px solid #ff0000; cursor: pointer; border-radius: 3px; font-weight: bold; }
         #restart-btn:hover { background: #300; color: #fff; }
 
@@ -77,7 +78,7 @@ improved_game_html = """
 
     <div id="room-info">
         <div style="color:#ff4d4d; font-weight:bold;">구역: 저주받은 저택</div>
-        <div>목표: 열쇠를 찾고 탈출문(금색)으로 탈출하라</div>
+        <div>목표: 황금색 탈출문을 찾아 탈출하라</div>
     </div>
     
     <div id="inventory">
@@ -87,7 +88,7 @@ improved_game_html = """
         <div class="slot" id="slot4"><span class="slot-key">[4]</span>탈출열쇠<br><span id="cnt-key">미획득</span></div>
     </div>
 
-    <div id="msg">화면을 클릭하여 게임을 시작하세요</div>
+    <div id="msg">키보드 방향키(←/→) 또는 마우스 드래그로 화면을 돌리세요</div>
     
     <div id="jumpscare">
         <div id="scare-face">
@@ -157,21 +158,6 @@ function playSound(type) {
     }
 }
 
-function playHeartbeat(dist) {
-    if (!audioCtx) return;
-    let now = audioCtx.currentTime;
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(60, now);
-    osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
-    let vol = Math.max(0.05, 0.35 - (dist * 0.04));
-    gain.gain.setValueAtTime(vol, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now + 0.08);
-}
-
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
@@ -190,7 +176,6 @@ let ghosts = [];
 let worldItems = [];
 let zBuffer = new Array(160).fill(0);
 let screenShake = 0;
-let heartbeatTimer = 0;
 
 const initialMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -226,16 +211,15 @@ function initGame() {
         { x: 13.5, y: 13.5, hp: 100, stun: 0 }
     ];
 
-    // 맵에 배치될 아이템 (타입: key, knife, potion, battery)
     worldItems = [
-        { x: 1.5, y: 12.5, type: 'key', char: '🔑', color: '#ffd700' },
-        { x: 13.5, y: 1.5, type: 'knife', char: '🗡️', color: '#c0c0c0' },
-        { x: 3.5, y: 3.5, type: 'potion', char: '💊', color: '#ff4444' },
-        { x: 11.5, y: 11.5, type: 'battery', char: '🔋', color: '#44ff44' }
+        { x: 1.5, y: 12.5, type: 'key', name: '열쇠', color: '#ffd700' },
+        { x: 13.5, y: 1.5, type: 'knife', name: '단검', color: '#aaaaaa' },
+        { x: 3.5, y: 3.5, type: 'potion', name: '포션', color: '#ff3333' },
+        { x: 11.5, y: 11.5, type: 'battery', name: '배터리', color: '#33ff33' }
     ];
 
     document.getElementById('jumpscare').style.display = 'none';
-    document.getElementById('msg').innerText = "화면을 클릭하여 시점을 고정하고 시작하세요";
+    document.getElementById('msg').innerText = "방향키(←/→) 또는 마우스 드래그로 시점을 돌리세요";
     document.getElementById('msg').style.color = "#ff2222";
     updateUI();
 }
@@ -244,6 +228,8 @@ function resetGame() { initGame(); }
 
 const keys = {};
 function parseKey(k) {
+    if (k === 'ArrowLeft') return 'left';
+    if (k === 'ArrowRight') return 'right';
     k = k.toLowerCase();
     if (k === 'ㅈ') return 'w';
     if (k === 'ㄴ') return 's';
@@ -264,7 +250,7 @@ window.addEventListener('keydown', e => {
         }
         if (e.key === '2' && items.battery > 0) { 
             flashRange = 13; items.battery--; 
-            playSound('item'); showTmpMsg("🔋 라이트 밝기가 증가했습니다."); updateUI(); 
+            playSound('item'); showTmpMsg("🔋 시야 범위가 확충되었습니다."); updateUI(); 
         }
         if (e.key === '3' && items.talisman > 0) { 
             ghosts.forEach(g => { g.stun = 200; g.x += (g.x - px); g.y += (g.y - py); }); 
@@ -276,13 +262,18 @@ window.addEventListener('keydown', e => {
 
 window.addEventListener('keyup', e => { keys[parseKey(e.key)] = false; });
 
-canvas.addEventListener('click', () => {
+// 마우스 드래그 및 포인터 회전 통합
+let isMouseDown = false;
+let lastMouseX = 0;
+
+canvas.addEventListener('mousedown', e => {
     initAudio();
+    isMouseDown = true;
+    lastMouseX = e.clientX;
+    
     canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
-    canvas.requestPointerLock();
-    if (document.getElementById('msg').innerText.includes("클릭")) {
-        document.getElementById('msg').innerText = "";
-    }
+    if (canvas.requestPointerLock) canvas.requestPointerLock();
+
     if (items.knife && isAttacking === 0 && !gameOver) {
         isAttacking = 8;
         playSound('attack');
@@ -290,9 +281,15 @@ canvas.addEventListener('click', () => {
     }
 });
 
+window.addEventListener('mouseup', () => { isMouseDown = false; });
+
 document.addEventListener('mousemove', e => {
     if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
-        angle += e.movementX * 0.003;
+        angle += e.movementX * 0.004;
+    } else if (isMouseDown) {
+        let dx = e.clientX - lastMouseX;
+        angle += dx * 0.005;
+        lastMouseX = e.clientX;
     }
 });
 
@@ -321,7 +318,7 @@ function checkAttackHit() {
 function updateUI() {
     document.getElementById('hp-bar').style.width = Math.max(0, hp) + "%";
     document.getElementById('stamina-bar').style.width = Math.max(0, stamina) + "%";
-    document.getElementById('weapon').innerText = items.knife ? "녹슨 단검 (좌클릭: 공격)" : "맨손";
+    document.getElementById('weapon').innerText = items.knife ? "녹슨 단검 (클릭: 공격)" : "맨손";
     
     document.getElementById('cnt-potion').innerText = items.potion;
     document.getElementById('cnt-battery').innerText = items.battery;
@@ -344,6 +341,10 @@ function update() {
     if (gameOver) return;
     if (screenShake > 0) screenShake--;
 
+    // 키보드 회전 조작 추가
+    if (keys['left']) angle -= 0.04;
+    if (keys['right']) angle += 0.04;
+
     let speed = keys['e'] && stamina >= 0.5 ? 0.065 : 0.038;
     if (keys['e'] && (keys['w']||keys['s']||keys['a']||keys['d'])) stamina = Math.max(0, stamina - 0.4);
     else stamina = Math.min(100, stamina + 0.2);
@@ -358,38 +359,36 @@ function update() {
     if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
     if (!isSolid(px, py + dy + Math.sign(dy)*margin)) py += dy;
 
-    // 필드 아이템 상호작용
+    // 아이템 습득 판정
     worldItems.forEach((item, idx) => {
         let dist = Math.sqrt((px - item.x)**2 + (py - item.y)**2);
-        if (dist < 0.6) {
+        if (dist < 0.7) {
             playSound('item');
-            if (item.type === 'key') { items.key = true; showTmpMsg("🔑 피묻은 열쇠를 얻었습니다! 탈출문(금색)으로 이동하세요."); }
+            if (item.type === 'key') { items.key = true; showTmpMsg("🔑 탈출 열쇠를 얻었습니다!"); }
             if (item.type === 'knife') { items.knife = true; showTmpMsg("🗡️ 녹슨 단검을 얻었습니다."); }
-            if (item.type === 'potion') { items.potion++; showTmpMsg("💊 회복약을 습득했습니다."); }
-            if (item.type === 'battery') { items.battery++; showTmpMsg("🔋 배터리를 습득했습니다."); }
+            if (item.type === 'potion') { items.potion++; showTmpMsg("💊 회복약을 얻었습니다."); }
+            if (item.type === 'battery') { items.battery++; showTmpMsg("🔋 배터리를 얻었습니다."); }
             worldItems.splice(idx, 1);
             updateUI();
         }
     });
 
-    // 탈출문 판정 (타일 3)
+    // 탈출문 판정
     if (houseMap[Math.floor(py)][Math.floor(px)] === 3) {
         if (items.key) {
             gameOver = true;
-            document.getElementById('msg').innerText = "🚪 열쇠로 문을 열고 탈출에 성공했습니다!";
+            document.getElementById('msg').innerText = "🚪 열쇠로 문을 열고 저택에서 탈출했습니다!";
             document.getElementById('msg').style.color = "gold";
         } else {
-            showTmpMsg("🔒 문이 잠겨 있습니다. 열쇠가 필요합니다.");
+            showTmpMsg("🔒 문이 잠겨 있습니다. 열쇠를 찾으세요.");
         }
     }
 
-    // 적 이동 및 공격 AI
-    let minDist = 999;
+    // 적 추적 AI
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = px - g.x, gdy = py - g.y;
         let dist = Math.sqrt(gdx*gdx + gdy*gdy);
-        if (dist < minDist) minDist = dist;
 
         if (g.stun > 0) {
             g.stun--;
@@ -407,14 +406,6 @@ function update() {
         }
     });
 
-    if (minDist < 6 && !gameOver) {
-        heartbeatTimer++;
-        if (heartbeatTimer % Math.max(8, Math.floor(minDist * 7)) === 0) playHeartbeat(minDist);
-        document.getElementById('glitch-overlay').style.opacity = (6 - minDist) / 6 * 0.8;
-    } else {
-        document.getElementById('glitch-overlay').style.opacity = 0;
-    }
-
     if (isAttacking > 0) isAttacking--;
 }
 
@@ -424,16 +415,15 @@ function render() {
         ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
     }
 
-    // 바닥 & 천장
     ctx.fillStyle = "#020202"; ctx.fillRect(0, 0, canvas.width, canvas.height/2);
     ctx.fillStyle = "#080404"; ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
     const fov = Math.PI / 3;
     const numRays = 160;
     const w = canvas.width / numRays;
-    let curFlashRange = flashRange + (Math.random() - 0.5) * 0.3;
+    let curFlashRange = flashRange + (Math.random() - 0.5) * 0.2;
 
-    // 1. 벽면 렌더링 (Raycasting)
+    // 1. 벽면 렌더링
     for (let i = 0; i < numRays; i++) {
         let rayAngle = (angle - fov / 2) + (i / numRays) * fov;
         let distance = 0;
@@ -456,13 +446,13 @@ function render() {
         let h = Math.min(canvas.height, canvas.height / (correctedDist + 0.0001));
         let shade = Math.max(0, Math.floor(180 - correctedDist * (180 / curFlashRange)));
 
-        if (hitType === 3) ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade*0.8)}, 0)`; // 탈출문(금색)
-        else ctx.fillStyle = `rgb(${Math.floor(shade*0.5)}, ${Math.floor(shade*0.15)}, ${Math.floor(shade*0.1)})`; // 벽
+        if (hitType === 3) ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade*0.8)}, 0)`;
+        else ctx.fillStyle = `rgb(${Math.floor(shade*0.5)}, ${Math.floor(shade*0.15)}, ${Math.floor(shade*0.1)})`;
 
         ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
     }
 
-    // 2. 3D 아이템 스프라이트 렌더링
+    // 2. 아이템 3D 그래픽 객체 직접 구현
     worldItems.forEach(item => {
         let idxX = item.x - px, idxY = item.y - py;
         let dist = Math.sqrt(idxX*idxX + idxY*idxY);
@@ -473,16 +463,31 @@ function render() {
         if (Math.abs(itemAngle) < fov / 2 && dist < curFlashRange) {
             let sx = (canvas.width / 2) + Math.tan(itemAngle) * (canvas.width / 2);
             let rayIndex = Math.floor((sx / canvas.width) * numRays);
+            
             if (rayIndex >= 0 && rayIndex < numRays && dist < zBuffer[rayIndex]) {
-                let size = Math.min(100, 150 / dist);
-                ctx.font = `${size}px sans-serif`;
+                let size = Math.min(80, 120 / dist);
+                let centerY = canvas.height / 2 + size;
+
+                ctx.save();
+                // 후광 효과
+                ctx.fillStyle = item.color;
+                ctx.shadowColor = item.color;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(sx, centerY, size/3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 아이템 텍스트 표기
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `bold ${Math.max(10, Math.floor(size/2))}px sans-serif`;
                 ctx.textAlign = "center";
-                ctx.fillText(item.char, sx, canvas.height/2 + size/3);
+                ctx.fillText(item.name, sx, centerY - size/2);
+                ctx.restore();
             }
         }
     });
 
-    // 3. 3D 원혼 렌더링
+    // 3. 원혼 렌더링
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -516,7 +521,7 @@ function render() {
         }
     });
 
-    // 4. 무기 애니메이션
+    // 4. 무기 렌더링
     if (items.knife) {
         ctx.save();
         let attackOffset = isAttacking * 10;
@@ -546,4 +551,4 @@ loop();
 </html>
 """
 
-components.html(improved_game_html, height=580)
+components.html(fixed_game_html, height=580)
