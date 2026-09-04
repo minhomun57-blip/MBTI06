@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="🏚️ 저주받은 저택 - 호러 에디션", layout="wide")
 
-st.title("🏚️ 저주받은 저택의 비밀 (Wide Vision Edition)")
+st.title("🏚️ 저주받은 저택의 비밀 (Enhanced Horror)")
 st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | 1,2,3: 아이템 사용 | 클릭: 무기 공격")
 
 horror_game_html = """
@@ -27,37 +27,44 @@ horror_game_html = """
         .slot-key { color: #ffaa00; font-size: 10px; margin-bottom: 2px; font-weight: bold; }
 
         #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #ff1111; font-size: 22px; font-weight: bold; text-align: center; text-shadow: 0 0 10px #000; z-index: 5; pointer-events: none; letter-spacing: 2px; }
-        #room-info { position: absolute; top: 15px; right: 15px; color: #777; font-size: 11px; text-align: right; z-index: 5; pointer-events: none; }
+        #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 11px; text-align: right; z-index: 5; pointer-events: none; }
 
         #glitch-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 4; opacity: 0;
-            background: repeating-linear-gradient(0deg, rgba(255,0,0,0.12), rgba(255,0,0,0.12) 2px, transparent 2px, transparent 4px);
+            background: repeating-linear-gradient(0deg, rgba(255,0,0,0.18), rgba(255,0,0,0.18) 2px, transparent 2px, transparent 4px);
         }
 
         #jumpscare {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000; z-index: 99; flex-direction: column; justify-content: center; align-items: center;
+            background-color: #050000; z-index: 99; flex-direction: column; justify-content: center; align-items: center;
+            animation: flash-red 0.08s infinite alternate;
         }
+        @keyframes flash-red {
+            0% { background-color: #000; }
+            100% { background-color: #200000; }
+        }
+
         #scare-face {
-            width: 320px; height: 380px; background: radial-gradient(circle, #600 0%, #100 60%, #000 100%);
-            border-radius: 40% 40% 50% 50%; position: relative; box-shadow: 0 0 120px #f00;
-            animation: violent-shake 0.02s infinite alternate;
+            width: 340px; height: 400px; background: radial-gradient(circle, #800 0%, #200 50%, #000 100%);
+            border-radius: 45% 45% 50% 50%; position: relative; box-shadow: 0 0 150px #f00;
+            animation: violent-shake 0.015s infinite alternate;
         }
-        .eye { position: absolute; top: 28%; width: 55px; height: 75px; background: #fff; border-radius: 50%; box-shadow: inset 0 0 25px #f00; }
-        .eye.left { left: 20%; transform: rotate(-12deg); }
-        .eye.right { right: 20%; transform: rotate(12deg); }
-        .pupil { position: absolute; top: 35%; left: 35%; width: 10px; height: 10px; background: #000; border-radius: 50%; box-shadow: 0 0 10px #f00; }
-        .mouth { position: absolute; bottom: 10%; left: 12%; width: 76%; height: 130px; background: #000; border-radius: 10px 10px 60px 60px; border: 3px solid #800; overflow: hidden; }
-        .teeth { width: 100%; height: 25px; background: repeating-linear-gradient(90deg, #ccc, #ccc 12px, #000 12px, #000 18px); }
-        
-        #scare-text { color: #ff0000; font-size: 28px; font-weight: 900; margin-top: 30px; text-shadow: 0 0 20px #ff0000; letter-spacing: 3px; }
+        .eye { position: absolute; top: 25%; width: 65px; height: 85px; background: #fff; border-radius: 50%; box-shadow: inset 0 0 30px #f00, 0 0 20px #ff0000; }
+        .eye.left { left: 18%; transform: rotate(-15deg); }
+        .eye.right { right: 18%; transform: rotate(15deg); }
+        .pupil { position: absolute; top: 30%; left: 30%; width: 14px; height: 14px; background: #000; border-radius: 50%; box-shadow: 0 0 12px #f00; }
+        .mouth { position: absolute; bottom: 8%; left: 10%; width: 80%; height: 150px; background: #000; border-radius: 10px 10px 70px 70px; border: 4px solid #a00; overflow: hidden; }
+        .teeth { width: 100%; height: 35px; background: repeating-linear-gradient(90deg, #eee, #eee 14px, #200 14px, #200 20px); }
+        .blood-drip { position: absolute; top: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(150,0,0,0.6) 0%, transparent 80%); }
+
+        #scare-text { color: #ff0000; font-size: 32px; font-weight: 900; margin-top: 30px; text-shadow: 0 0 25px #ff0000; letter-spacing: 4px; }
         #restart-btn { margin-top: 25px; padding: 12px 32px; font-size: 15px; background: #050505; color: #ff3333; border: 1px solid #ff0000; cursor: pointer; font-weight: bold; }
-        #restart-btn:hover { background: #300; color: #fff; }
+        #restart-btn:hover { background: #400; color: #fff; }
 
         @keyframes violent-shake {
-            0% { transform: translate(6px, -6px) scale(1.05); }
-            100% { transform: translate(-6px, 6px) scale(1.12); }
+            0% { transform: translate(10px, -10px) scale(1.1); }
+            100% { transform: translate(-10px, 10px) scale(1.22); }
         }
     </style>
 </head>
@@ -94,7 +101,10 @@ horror_game_html = """
         <div id="scare-face">
             <div class="eye left"><div class="pupil"></div></div>
             <div class="eye right"><div class="pupil"></div></div>
-            <div class="mouth"><div class="teeth"></div></div>
+            <div class="mouth">
+                <div class="teeth"></div>
+                <div class="blood-drip"></div>
+            </div>
         </div>
         <div id="scare-text">당신의 영혼은 이제 저택의 일부입니다...</div>
         <button id="restart-btn" onclick="resetGame()">다시 도전하기</button>
@@ -149,12 +159,12 @@ function playSound(type) {
         let gain = audioCtx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(180, now);
-        osc.frequency.linearRampToValueAtTime(900, now + 0.1);
-        osc.frequency.linearRampToValueAtTime(80, now + 0.9);
-        gain.gain.setValueAtTime(0.8, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+        osc.frequency.linearRampToValueAtTime(1100, now + 0.08);
+        osc.frequency.linearRampToValueAtTime(60, now + 1.2);
+        gain.gain.setValueAtTime(1.0, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(now); osc.stop(now + 0.9);
+        osc.start(now); osc.stop(now + 1.2);
     }
 }
 
@@ -163,12 +173,12 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 580;
 
-// 절차적 벽면 텍스처
+// 벽면 텍스처 (밝기 조정)
 const texCanvas = document.createElement('canvas');
 texCanvas.width = 64; texCanvas.height = 64;
 const texCtx = texCanvas.getContext('2d');
-texCtx.fillStyle = '#1c0f0d'; texCtx.fillRect(0,0,64,64);
-texCtx.fillStyle = '#0f0706';
+texCtx.fillStyle = '#3a2522'; texCtx.fillRect(0,0,64,64);
+texCtx.fillStyle = '#1c0f0d';
 for(let i=0; i<64; i+=16) {
     texCtx.fillRect(0, i, 64, 2);
     for(let j=0; j<64; j+=16) {
@@ -176,8 +186,8 @@ for(let i=0; i<64; i+=16) {
         texCtx.fillRect(j+offset, i, 2, 16);
     }
 }
-for(let i=0; i<80; i++) {
-    texCtx.fillStyle = `rgba(0,0,0,${Math.random()*0.4})`;
+for(let i=0; i<60; i++) {
+    texCtx.fillStyle = `rgba(0,0,0,${Math.random()*0.3})`;
     texCtx.fillRect(Math.random()*64, Math.random()*64, 3, 3);
 }
 
@@ -187,7 +197,7 @@ let px = 1.5, py = 1.5;
 let angle = 0;
 let hp = 100;
 let stamina = 100;
-let flashRange = 9;
+let flashRange = 12; // 손전등 탐색 범위 확장
 let gameOver = false;
 let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
 let isAttacking = 0;
@@ -197,7 +207,6 @@ let zBuffer = new Array(160).fill(0);
 let screenShake = 0;
 let animTimer = 0;
 
-// FOV 넓힘 (약 75도 설정으로 답답함 제거)
 const fov = Math.PI * 0.42; 
 
 const initialMap = [
@@ -231,7 +240,7 @@ function initGame() {
     angle = 0;
     hp = 100;
     stamina = 100;
-    flashRange = 9;
+    flashRange = 12;
     gameOver = false;
     items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
     isAttacking = 0;
@@ -280,7 +289,7 @@ window.addEventListener('keydown', e => {
             playSound('item'); showTmpMsg("💊 체력을 회복했습니다."); updateUI(); 
         }
         if (e.key === '2' && items.battery > 0) { 
-            flashRange = 14; items.battery--; 
+            flashRange = 16; items.battery--; 
             playSound('item'); showTmpMsg("🔋 손전등 출력이 강화되었습니다."); updateUI(); 
         }
         if (e.key === '3' && items.talisman > 0) { 
@@ -384,7 +393,6 @@ function update() {
     if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
     if (!isSolid(px, py + dy + Math.sign(dy)*margin)) py += dy;
 
-    // 아이템 습득 판정
     worldItems.forEach((item, idx) => {
         let dist = Math.sqrt((px - item.x)**2 + (py - item.y)**2);
         if (dist < 0.7) {
@@ -398,7 +406,6 @@ function update() {
         }
     });
 
-    // 탈출문 판정
     if (houseMap[Math.floor(py)][Math.floor(px)] === 3) {
         if (items.key) {
             gameOver = true;
@@ -409,7 +416,6 @@ function update() {
         }
     }
 
-    // 적 추적 AI
     let minDist = 999;
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
@@ -442,94 +448,79 @@ function update() {
     if (isAttacking > 0) isAttacking--;
 }
 
-// 아이템 형태별 3D 드로잉 함수
 function drawCustomItem(type, sx, sy, size) {
     ctx.save();
     ctx.translate(sx, sy);
 
     if (type === 'key') {
-        // 황금 열쇠 형태
         ctx.strokeStyle = '#ffd700';
         ctx.fillStyle = '#ffaa00';
-        ctx.lineWidth = Math.max(2, size/12);
+        ctx.lineWidth = Math.max(3, size/10);
 
-        // 열쇠 손잡이 (고리)
         ctx.beginPath();
-        ctx.arc(0, -size/3, size/4, 0, Math.PI * 2);
+        ctx.arc(0, -size/3, size/3.5, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 열쇠 대
         ctx.beginPath();
-        ctx.moveTo(0, -size/12);
+        ctx.moveTo(0, -size/10);
         ctx.lineTo(0, size/2);
         ctx.stroke();
 
-        // 열쇠 톱니
         ctx.beginPath();
-        ctx.moveTo(0, size/3);
-        ctx.lineTo(size/4, size/3);
+        ctx.moveTo(0, size/4);
+        ctx.lineTo(size/3, size/4);
         ctx.moveTo(0, size/2);
-        ctx.lineTo(size/4, size/2);
+        ctx.lineTo(size/3, size/2);
         ctx.stroke();
 
     } else if (type === 'knife') {
-        // 단검 형태
-        ctx.fillStyle = '#cccccc';
-        ctx.strokeStyle = '#555555';
-        ctx.lineWidth = 1;
+        ctx.fillStyle = '#e0e0e0';
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1.5;
 
-        // 칼날
         ctx.beginPath();
-        ctx.moveTo(0, -size/2);
-        ctx.lineTo(size/6, size/6);
-        ctx.lineTo(-size/6, size/6);
+        ctx.moveTo(0, -size/1.8);
+        ctx.lineTo(size/5, size/5);
+        ctx.lineTo(-size/5, size/5);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 코등이 & 손잡이
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(-size/4, size/6, size/2, size/10);
-        ctx.fillRect(-size/12, size/6 + size/10, size/6, size/3);
+        ctx.fillStyle = '#5c2c16';
+        ctx.fillRect(-size/3, size/5, size/1.5, size/8);
+        ctx.fillRect(-size/10, size/5 + size/8, size/5, size/2.5);
 
     } else if (type === 'potion') {
-        // 포션 병 형태
-        ctx.fillStyle = 'rgba(255, 30, 30, 0.85)';
+        ctx.fillStyle = 'rgba(255, 40, 40, 0.9)';
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
 
-        // 병 몸통
         ctx.beginPath();
-        ctx.arc(0, size/6, size/3, 0, Math.PI * 2);
+        ctx.arc(0, size/5, size/2.8, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // 병 목 & 마개
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-size/8, -size/4, size/4, size/4);
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(-size/6, -size/3, size/3, size/10);
+        ctx.fillRect(-size/6, -size/4, size/3, size/4);
+        ctx.fillStyle = '#6b3e26';
+        ctx.fillRect(-size/5, -size/2.8, size/2.5, size/8);
 
     } else if (type === 'battery') {
-        // 배터리 형태
-        ctx.fillStyle = '#00ff44';
+        ctx.fillStyle = '#11cc44';
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
 
-        // 본체
-        ctx.fillRect(-size/4, -size/3, size/2, size/1.5);
-        ctx.strokeRect(-size/4, -size/3, size/2, size/1.5);
+        ctx.fillRect(-size/3, -size/2.5, size/1.5, size/1.3);
+        ctx.strokeRect(-size/3, -size/2.5, size/1.5, size/1.3);
 
-        // 양극 (+) 돌기
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(-size/6, -size/1.8, size/3, size/6);
+
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-size/8, -size/2, size/4, size/6);
-
-        // 플러스 기호
-        ctx.fillStyle = '#000000';
-        ctx.font = `bold ${Math.max(10, Math.floor(size/3))}px sans-serif`;
+        ctx.font = `bold ${Math.max(12, Math.floor(size/2.5))}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('+', 0, 0);
+        ctx.fillText('⚡', 0, 0);
     }
 
     ctx.restore();
@@ -541,23 +532,21 @@ function render() {
         ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
     }
 
-    // 천장 & 바닥
+    // 천장 & 바닥 밝기 상향
     let ceilGrd = ctx.createLinearGradient(0, 0, 0, canvas.height/2);
-    ceilGrd.addColorStop(0, '#000000'); ceilGrd.addColorStop(1, '#080202');
+    ceilGrd.addColorStop(0, '#0a0a0a'); ceilGrd.addColorStop(1, '#221515');
     ctx.fillStyle = ceilGrd; ctx.fillRect(0, 0, canvas.width, canvas.height/2);
 
     let floorGrd = ctx.createLinearGradient(0, canvas.height/2, 0, canvas.height);
-    floorGrd.addColorStop(0, '#050202'); floorGrd.addColorStop(1, '#000000');
+    floorGrd.addColorStop(0, '#1c1010'); floorGrd.addColorStop(1, '#050505');
     ctx.fillStyle = floorGrd; ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
     const numRays = 160;
     const w = canvas.width / numRays;
-    let curFlashRange = flashRange + (Math.random() - 0.5) * 0.35;
+    let curFlashRange = flashRange + (Math.random() - 0.5) * 0.2;
 
-    // Projection Distance 계산 (넓은 FOV 지원)
     let projDist = (canvas.width / 2) / Math.tan(fov / 2);
 
-    // 1. 레이캐스팅 벽면 렌더링
     for (let i = 0; i < numRays; i++) {
         let rayAngle = (angle - fov / 2) + (i / numRays) * fov;
         let distance = 0;
@@ -582,10 +571,10 @@ function render() {
         zBuffer[i] = correctedDist;
 
         let h = Math.min(canvas.height, (projDist / (correctedDist + 0.0001)));
-        let shade = Math.max(0, 1 - (correctedDist / curFlashRange));
+        let shade = Math.max(0.15, 1 - (correctedDist / curFlashRange)); // 최소 명도 보장
 
         if (hitType === 3) {
-            ctx.fillStyle = `rgba(212, 175, 55, ${shade})`;
+            ctx.fillStyle = `rgba(230, 190, 60, ${shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
         } else {
             ctx.drawImage(texCanvas, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
@@ -594,7 +583,6 @@ function render() {
         }
     }
 
-    // 2. 특수 오프젝트(아이템) 독자적 3D 형상 렌더링
     worldItems.forEach(item => {
         let idxX = item.x - px, idxY = item.y - py;
         let dist = Math.sqrt(idxX*idxX + idxY*idxY);
@@ -607,14 +595,12 @@ function render() {
             let rayIndex = Math.floor((sx / canvas.width) * numRays);
             
             if (rayIndex >= 0 && rayIndex < numRays && dist < zBuffer[rayIndex]) {
-                let size = Math.min(100, projDist * 0.4 / dist);
+                let size = Math.min(110, projDist * 0.45 / dist);
                 let floatY = Math.sin(animTimer * 2.5) * 6; 
                 let centerY = canvas.height / 2 + size/3 + floatY;
 
-                // 아이템 고유 3D 그래픽 그리기
                 drawCustomItem(item.type, sx, centerY, size);
 
-                // 아이템 텍스트 라벨
                 ctx.save();
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `bold ${Math.max(11, Math.floor(size/2.2))}px sans-serif`;
@@ -626,7 +612,6 @@ function render() {
         }
     });
 
-    // 3. 3D 원혼 렌더링
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -640,12 +625,12 @@ function render() {
             let rayIndex = Math.floor((sx / canvas.width) * numRays);
             
             if (rayIndex >= 0 && rayIndex < numRays && gDist < zBuffer[rayIndex]) {
-                let size = Math.min(420, projDist * 1.1 / gDist);
+                let size = Math.min(450, projDist * 1.1 / gDist);
                 let topY = canvas.height / 2 - size / 2;
                 let wobble = Math.sin(animTimer * 4) * 6;
 
                 ctx.save();
-                ctx.fillStyle = g.stun > 0 ? '#00ffff' : 'rgba(10,0,2,0.95)';
+                ctx.fillStyle = g.stun > 0 ? '#00ffff' : 'rgba(15,2,4,0.95)';
                 ctx.beginPath();
                 ctx.ellipse(sx + wobble, topY + size/2, size/4, size/2.2, 0, 0, Math.PI * 2);
                 ctx.fill();
@@ -661,7 +646,6 @@ function render() {
         }
     });
 
-    // 4. 무기 연출
     if (items.knife) {
         ctx.save();
         let attackOffset = isAttacking * 12;
