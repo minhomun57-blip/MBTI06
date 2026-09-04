@@ -1,9 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="🏚️ 저주받은 저택 - 호러 에디션", layout="wide")
+st.set_page_config(page_title="🏚️ 저주받은 저택 - 방 & 아이템 강화 에디션", layout="wide")
 
-st.title("🏚️ 저주받은 저택의 비밀 (Enhanced Horror & Rooms)")
+st.title("🏚️ 저주받은 저택: 방과 아이템의 비밀")
 st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | 1,2,3: 아이템 사용 | 클릭: 무기 공격")
 
 horror_game_html = """
@@ -26,7 +26,7 @@ horror_game_html = """
         .slot { width: 65px; height: 65px; border: 1px solid #333; background: rgba(5,5,5,0.9); color: #aaa; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; border-radius: 3px; text-align: center; }
         .slot-key { color: #ffaa00; font-size: 10px; margin-bottom: 2px; font-weight: bold; }
 
-        #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #ff1111; font-size: 22px; font-weight: bold; text-align: center; text-shadow: 0 0 10px #000; z-index: 5; pointer-events: none; letter-spacing: 2px; }
+        #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #ff1111; font-size: 20px; font-weight: bold; text-align: center; text-shadow: 0 0 10px #000; z-index: 5; pointer-events: none; letter-spacing: 1px; }
         #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 11px; text-align: right; z-index: 5; pointer-events: none; }
 
         #glitch-overlay {
@@ -84,8 +84,8 @@ horror_game_html = """
     </div>
 
     <div id="room-info">
-        <div style="color:#ff3333; font-weight:bold;">구역: 저주받은 저택</div>
-        <div>방들을 수색하여 숨겨진 아이템을 찾으세요</div>
+        <div style="color:#ff3333; font-weight:bold;" id="current-room-name">현재 위치: 중앙 복도</div>
+        <div>문(나무 형태)을 지나 각 방 탐색 가능</div>
     </div>
     
     <div id="inventory">
@@ -173,26 +173,36 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 580;
 
-const texCanvas = document.createElement('canvas');
-texCanvas.width = 64; texCanvas.height = 64;
-const texCtx = texCanvas.getContext('2d');
-texCtx.fillStyle = '#3a2522'; texCtx.fillRect(0,0,64,64);
-texCtx.fillStyle = '#1c0f0d';
+// 벽 텍스처 (0: 복도, 1: 벽, 2: 일반 방 문, 3: 탈출문)
+const wallTex = document.createElement('canvas');
+wallTex.width = 64; wallTex.height = 64;
+const wCtx = wallTex.getContext('2d');
+wCtx.fillStyle = '#2d1d1a'; wCtx.fillRect(0,0,64,64);
+wCtx.fillStyle = '#140a08';
 for(let i=0; i<64; i+=16) {
-    texCtx.fillRect(0, i, 64, 2);
+    wCtx.fillRect(0, i, 64, 2);
     for(let j=0; j<64; j+=16) {
         let offset = (i/16)%2 === 0 ? 0 : 8;
-        texCtx.fillRect(j+offset, i, 2, 16);
+        wCtx.fillRect(j+offset, i, 2, 16);
     }
 }
-for(let i=0; i<60; i++) {
-    texCtx.fillStyle = `rgba(0,0,0,${Math.random()*0.3})`;
-    texCtx.fillRect(Math.random()*64, Math.random()*64, 3, 3);
-}
+
+// 방 문(Door) 텍스처
+const doorTex = document.createElement('canvas');
+doorTex.width = 64; doorTex.height = 64;
+const dCtx = doorTex.getContext('2d');
+dCtx.fillStyle = '#4a2e18'; dCtx.fillRect(0,0,64,64);
+dCtx.fillStyle = '#261408';
+dCtx.fillRect(2, 2, 60, 60);
+dCtx.fillStyle = '#5c3a1e';
+dCtx.fillRect(6, 6, 24, 24); dCtx.fillRect(34, 6, 24, 24);
+dCtx.fillRect(6, 34, 24, 24); dCtx.fillRect(34, 34, 24, 24);
+dCtx.fillStyle = '#ffaa00'; // 황금 문고리
+dCtx.beginPath(); dCtx.arc(10, 32, 3, 0, Math.PI*2); dCtx.fill();
 
 let houseMap = [];
 let MAP_SIZE = 21;
-let px = 1.5, py = 1.5;
+let px = 10.5, py = 10.5; // 중앙 복도에서 시작
 let angle = 0;
 let hp = 100;
 let stamina = 100;
@@ -208,35 +218,35 @@ let animTimer = 0;
 
 const fov = Math.PI * 0.42; 
 
-// 구조화된 방 형태의 맵 설정 (0: 복도/방 내부, 1: 벽, 3: 탈출문)
+// 0: 복도/빈공간, 1: 벽, 2: 방 문, 3: 최종 탈출문
 const initialMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
-    [1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
-    [1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
-    [1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
+    [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
+    [1,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
+    [1,1,1,1,1,0,1,1,2,1,1,1,2,1,1,0,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1],
+    [1,0,1,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,1,0,1],
+    [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+    [1,0,1,1,2,1,1,0,0,0,0,0,0,0,1,1,2,1,1,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
-    [1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,1],
-    [1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,0,1],
-    [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1],
-    [1,1,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,1,1,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
-    [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
-    [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
-    [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1],
-    [1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
-    [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1],
-    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,3,1],
+    [1,0,1,1,2,1,1,0,0,0,0,0,0,0,1,1,2,1,1,0,1],
+    [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
+    [1,0,1,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,1,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,0,1,1,2,1,1,1,2,1,1,0,1,1,1,1,1],
+    [1,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
+    [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
+    [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,3,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
 function initGame() {
     houseMap = JSON.parse(JSON.stringify(initialMap));
     MAP_SIZE = houseMap.length;
-    px = 1.5; py = 1.5;
+    px = 10.5; py = 10.5;
     angle = 0;
     hp = 100;
     stamina = 100;
@@ -246,24 +256,24 @@ function initGame() {
     isAttacking = 0;
 
     ghosts = [
-        { x: 9.5, y: 5.5, hp: 100, stun: 0 },
-        { x: 18.5, y: 1.5, hp: 100, stun: 0 },
+        { x: 2.5, y: 2.5, hp: 100, stun: 0 },
+        { x: 18.5, y: 2.5, hp: 100, stun: 0 },
         { x: 2.5, y: 18.5, hp: 100, stun: 0 }
     ];
 
-    // 방 내부 구석 곳곳에 아이템 배치
+    // 방 내부 구석에 위치시킨 입체적 아이템
     worldItems = [
-        { x: 2.5, y: 2.5, type: 'knife', name: '녹슨 단검 (서재)' },
-        { x: 18.5, y: 2.5, type: 'potion', name: '의용 회복제 (응급실)' },
-        { x: 2.5, y: 8.5, type: 'battery', name: '고전압 배터리 (창고)' },
-        { x: 18.5, y: 8.5, type: 'potion', name: '의용 회복제 (침실)' },
-        { x: 2.5, y: 14.5, type: 'battery', name: '고전압 배터리 (연구실)' },
-        { x: 18.5, y: 14.5, type: 'key', name: '피묻은 열쇠 (지하 밀실)' }
+        { x: 2.5, y: 1.5, type: 'knife', name: '녹슨 단검 (서재)' },
+        { x: 18.5, y: 1.5, type: 'potion', name: '의용 회복제 (응급실)' },
+        { x: 1.5, y: 8.5, type: 'battery', name: '고전압 배터리 (창고)' },
+        { x: 19.5, y: 8.5, type: 'potion', name: '의용 회복제 (침실)' },
+        { x: 1.5, y: 13.5, type: 'battery', name: '고전압 배터리 (연구실)' },
+        { x: 18.5, y: 18.5, type: 'key', name: '피묻은 열쇠 (지하 밀실)' }
     ];
 
     document.getElementById('jumpscare').style.display = 'none';
-    document.getElementById('msg').innerText = "방들을 탐색하여 필요한 아이템을 찾으세요";
-    document.getElementById('msg').style.color = "#ff2222";
+    document.getElementById('msg').innerText = "저택의 문들을 통해 각 방을 수색하고 아이템을 찾으세요";
+    document.getElementById('msg').style.color = "#ff3333";
     updateUI();
 }
 
@@ -365,7 +375,8 @@ function updateUI() {
 
 function isSolid(x, y) {
     if (x < 0 || x >= MAP_SIZE || y < 0 || y >= MAP_SIZE) return true;
-    return houseMap[Math.floor(y)][Math.floor(x)] === 1;
+    let tile = houseMap[Math.floor(y)][Math.floor(x)];
+    return tile === 1; // 1번 벽만 통과 불가, 2번 문/0번 빈공간은 통과 가능
 }
 
 function triggerJumpscare() {
@@ -395,6 +406,15 @@ function update() {
     const margin = 0.25;
     if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
     if (!isSolid(px, py + dy + Math.sign(dy)*margin)) py += dy;
+
+    // 현재 방 위치 탐지 및 UI 변경
+    let curX = Math.floor(px), curY = Math.floor(py);
+    let roomTxt = "중앙 복도";
+    if (curX < 4 && curY < 4) roomTxt = "북서쪽 서재 (단검 위치)";
+    else if (curX > 16 && curY < 4) roomTxt = "북동쪽 응급실 (회복제 위치)";
+    else if (curX < 4 && curY > 16) roomTxt = "남서쪽 침실 (부적 위치)";
+    else if (curX > 16 && curY > 16) roomTxt = "남동쪽 지하 밀실 (열쇠 위치)";
+    document.getElementById('current-room-name').innerText = "현재 위치: " + roomTxt;
 
     worldItems.forEach((item, idx) => {
         let dist = Math.sqrt((px - item.x)**2 + (py - item.y)**2);
@@ -451,79 +471,73 @@ function update() {
     if (isAttacking > 0) isAttacking--;
 }
 
-function drawCustomItem(type, sx, sy, size) {
+// 아이템 실체감 있는 3D 오프셋 렌더링
+function draw3DItem(type, sx, sy, size) {
     ctx.save();
     ctx.translate(sx, sy);
 
     if (type === 'key') {
-        ctx.strokeStyle = '#ffd700';
-        ctx.fillStyle = '#ffaa00';
-        ctx.lineWidth = Math.max(3, size/10);
-
-        ctx.beginPath();
-        ctx.arc(0, -size/3, size/3.5, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, -size/10);
-        ctx.lineTo(0, size/2);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, size/4);
-        ctx.lineTo(size/3, size/4);
-        ctx.moveTo(0, size/2);
-        ctx.lineTo(size/3, size/2);
-        ctx.stroke();
+        // 열쇠 - 3D 입체 금속 스타일
+        ctx.fillStyle = '#b38f00'; ctx.beginPath(); ctx.arc(3, -size/3 + 3, size/3.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0, -size/3, size/3.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1a1100'; ctx.beginPath(); ctx.arc(0, -size/3, size/6, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(-size/12, -size/6, size/6, size/1.2);
+        ctx.fillRect(size/12, size/4, size/4, size/8);
+        ctx.fillRect(size/12, size/2.2, size/4, size/8);
 
     } else if (type === 'knife') {
-        ctx.fillStyle = '#e0e0e0';
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 1.5;
-
+        // 단검 - 실물 스타일 손잡이와 검신
+        ctx.fillStyle = '#888888';
         ctx.beginPath();
-        ctx.moveTo(0, -size/1.8);
-        ctx.lineTo(size/5, size/5);
-        ctx.lineTo(-size/5, size/5);
+        ctx.moveTo(0, -size/1.5);
+        ctx.lineTo(size/6, size/6);
+        ctx.lineTo(-size/6, size/6);
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
 
-        ctx.fillStyle = '#5c2c16';
-        ctx.fillRect(-size/3, size/5, size/1.5, size/8);
-        ctx.fillRect(-size/10, size/5 + size/8, size/5, size/2.5);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, -size/1.5);
+        ctx.lineTo(0, size/6);
+        ctx.lineTo(-size/6, size/6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#4a2511';
+        ctx.fillRect(-size/4, size/6, size/2, size/10);
+        ctx.fillStyle = '#2b1408';
+        ctx.fillRect(-size/8, size/6 + size/10, size/4, size/2.5);
 
     } else if (type === 'potion') {
-        ctx.fillStyle = 'rgba(255, 40, 40, 0.9)';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        // 약병 - 실감나는 유리 병 및 회복 액체
+        ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
+        ctx.beginPath(); ctx.arc(0, size/4, size/2.2, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = '#ff1133';
+        ctx.beginPath(); ctx.arc(0, size/4, size/2.6, 0, Math.PI * 2); ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath(); ctx.arc(-size/6, size/6, size/8, 0, Math.PI * 2); ctx.fill();
 
-        ctx.beginPath();
-        ctx.arc(0, size/5, size/2.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-size/6, -size/4, size/3, size/4);
-        ctx.fillStyle = '#6b3e26';
-        ctx.fillRect(-size/5, -size/2.8, size/2.5, size/8);
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(-size/6, -size/3, size/3, size/6);
 
     } else if (type === 'battery') {
-        ctx.fillStyle = '#11cc44';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        // 배터리 - 주황/검정 산업용 배터리 실물 느낌
+        ctx.fillStyle = '#222222';
+        ctx.fillRect(-size/3, -size/3, size/1.5, size/1.2);
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(-size/3, 0, size/1.5, size/2.4);
 
-        ctx.fillRect(-size/3, -size/2.5, size/1.5, size/1.3);
-        ctx.strokeRect(-size/3, -size/2.5, size/1.5, size/1.3);
-
-        ctx.fillStyle = '#cccccc';
-        ctx.fillRect(-size/6, -size/1.8, size/3, size/6);
-
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillRect(-size/8, -size/2, size/4, size/6);
+        
         ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.max(12, Math.floor(size/2.5))}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⚡', 0, 0);
+        ctx.font = `bold ${Math.max(10, Math.floor(size/3))}px sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⚡', 0, size/5);
     }
 
     ctx.restore();
@@ -578,8 +592,14 @@ function render() {
         if (hitType === 3) {
             ctx.fillStyle = `rgba(230, 190, 60, ${shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
+        } else if (hitType === 2) {
+            // 방 문(Door) 텍스처 렌더링
+            ctx.drawImage(doorTex, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
+            ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
+            ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
         } else {
-            ctx.drawImage(texCanvas, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
+            // 일반 벽 텍스처 렌더링
+            ctx.drawImage(wallTex, Math.floor(wallX), 0, 1, 64, i * w, (canvas.height - h) / 2, w + 1, h);
             ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
             ctx.fillRect(i * w, (canvas.height - h) / 2, w + 1, h);
         }
@@ -597,18 +617,18 @@ function render() {
             let rayIndex = Math.floor((sx / canvas.width) * numRays);
             
             if (rayIndex >= 0 && rayIndex < numRays && dist < zBuffer[rayIndex]) {
-                let size = Math.min(110, projDist * 0.45 / dist);
-                let floatY = Math.sin(animTimer * 2.5) * 6; 
+                let size = Math.min(120, projDist * 0.45 / dist);
+                let floatY = Math.sin(animTimer * 2.5) * 5; 
                 let centerY = canvas.height / 2 + size/3 + floatY;
 
-                drawCustomItem(item.type, sx, centerY, size);
+                draw3DItem(item.type, sx, centerY, size);
 
                 ctx.save();
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `bold ${Math.max(11, Math.floor(size/2.2))}px sans-serif`;
                 ctx.textAlign = "center";
                 ctx.shadowColor = "#000000"; ctx.shadowBlur = 6;
-                ctx.fillText(item.name, sx, centerY - size/1.3);
+                ctx.fillText(item.name, sx, centerY - size/1.2);
                 ctx.restore();
             }
         }
