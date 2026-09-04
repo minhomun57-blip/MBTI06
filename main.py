@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="🏚️ 저주받은 저택 - 호러 에디션", layout="wide")
 
-st.title("🏚️ 저주받은 저택의 비밀 (Enhanced Horror)")
+st.title("🏚️ 저주받은 저택의 비밀 (Enhanced Horror & Rooms)")
 st.caption("조작 방법 | W/A/S/D: 이동 | 방향키(←/→) 또는 마우스 드래그: 시점 회전 | E: 달리기 | 1,2,3: 아이템 사용 | 클릭: 무기 공격")
 
 horror_game_html = """
@@ -84,8 +84,8 @@ horror_game_html = """
     </div>
 
     <div id="room-info">
-        <div style="color:#ff3333; font-weight:bold;">구역: 심연의 미로</div>
-        <div>목표: 피묻은 열쇠를 찾아 황금문으로 탈출하라</div>
+        <div style="color:#ff3333; font-weight:bold;">구역: 저주받은 저택</div>
+        <div>방들을 수색하여 숨겨진 아이템을 찾으세요</div>
     </div>
     
     <div id="inventory">
@@ -173,7 +173,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 580;
 
-// 벽면 텍스처 (밝기 조정)
 const texCanvas = document.createElement('canvas');
 texCanvas.width = 64; texCanvas.height = 64;
 const texCtx = texCanvas.getContext('2d');
@@ -197,7 +196,7 @@ let px = 1.5, py = 1.5;
 let angle = 0;
 let hp = 100;
 let stamina = 100;
-let flashRange = 12; // 손전등 탐색 범위 확장
+let flashRange = 12;
 let gameOver = false;
 let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
 let isAttacking = 0;
@@ -209,27 +208,28 @@ let animTimer = 0;
 
 const fov = Math.PI * 0.42; 
 
+// 구조화된 방 형태의 맵 설정 (0: 복도/방 내부, 1: 벽, 3: 탈출문)
 const initialMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-    [1,0,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1],
-    [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,0,1],
-    [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
-    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1],
-    [1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1],
-    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1],
-    [1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-    [1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
-    [1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-    [1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
-    [1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1],
-    [1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,1],
-    [1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,0,1],
-    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1],
-    [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1],
+    [1,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+    [1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
+    [1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
+    [1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,1],
+    [1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1],
+    [1,1,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1],
+    [1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,3,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
@@ -246,20 +246,23 @@ function initGame() {
     isAttacking = 0;
 
     ghosts = [
-        { x: 9.5, y: 9.5, hp: 100, stun: 0 },
-        { x: 17.5, y: 3.5, hp: 100, stun: 0 },
-        { x: 3.5, y: 17.5, hp: 100, stun: 0 }
+        { x: 9.5, y: 5.5, hp: 100, stun: 0 },
+        { x: 18.5, y: 1.5, hp: 100, stun: 0 },
+        { x: 2.5, y: 18.5, hp: 100, stun: 0 }
     ];
 
+    // 방 내부 구석 곳곳에 아이템 배치
     worldItems = [
-        { x: 19.5, y: 1.5, type: 'key', name: '피묻은 열쇠' },
-        { x: 1.5, y: 19.5, type: 'knife', name: '녹슨 단검' },
-        { x: 9.5, y: 1.5, type: 'potion', name: '의용 회복제' },
-        { x: 11.5, y: 17.5, type: 'battery', name: '고전압 배터리' }
+        { x: 2.5, y: 2.5, type: 'knife', name: '녹슨 단검 (서재)' },
+        { x: 18.5, y: 2.5, type: 'potion', name: '의용 회복제 (응급실)' },
+        { x: 2.5, y: 8.5, type: 'battery', name: '고전압 배터리 (창고)' },
+        { x: 18.5, y: 8.5, type: 'potion', name: '의용 회복제 (침실)' },
+        { x: 2.5, y: 14.5, type: 'battery', name: '고전압 배터리 (연구실)' },
+        { x: 18.5, y: 14.5, type: 'key', name: '피묻은 열쇠 (지하 밀실)' }
     ];
 
     document.getElementById('jumpscare').style.display = 'none';
-    document.getElementById('msg').innerText = "방향키(←/→) 또는 드래그로 시점을 회전하세요";
+    document.getElementById('msg').innerText = "방들을 탐색하여 필요한 아이템을 찾으세요";
     document.getElementById('msg').style.color = "#ff2222";
     updateUI();
 }
@@ -532,7 +535,6 @@ function render() {
         ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
     }
 
-    // 천장 & 바닥 밝기 상향
     let ceilGrd = ctx.createLinearGradient(0, 0, 0, canvas.height/2);
     ceilGrd.addColorStop(0, '#0a0a0a'); ceilGrd.addColorStop(1, '#221515');
     ctx.fillStyle = ceilGrd; ctx.fillRect(0, 0, canvas.width, canvas.height/2);
@@ -571,7 +573,7 @@ function render() {
         zBuffer[i] = correctedDist;
 
         let h = Math.min(canvas.height, (projDist / (correctedDist + 0.0001)));
-        let shade = Math.max(0.15, 1 - (correctedDist / curFlashRange)); // 최소 명도 보장
+        let shade = Math.max(0.15, 1 - (correctedDist / curFlashRange));
 
         if (hitType === 3) {
             ctx.fillStyle = `rgba(230, 190, 60, ${shade})`;
