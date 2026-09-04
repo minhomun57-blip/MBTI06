@@ -10,23 +10,23 @@ game_html = """
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; user-select: none; }
         #canvas { width: 100%; height: 530px; display: block; cursor: pointer; }
         
-        #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+        #ui { position: absolute; top: 15px; left: 15px; color: white; text-shadow: 1px 1px 3px black; font-size: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 5; pointer-events: none; }
         .bar-container { width: 180px; height: 16px; background: rgba(255,255,255,0.15); border: 2px solid #444; border-radius: 8px; overflow: hidden; }
         .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
         #hp-bar { background: linear-gradient(90deg, #cc0000, #ff4d4d); }
         #stamina-bar { background: linear-gradient(90deg, #28a745, #5cdb5c); }
 
-        /* 인벤토리를 우측 하단으로 이동 */
-        #inventory { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 8px; z-index: 5; }
+        #inventory { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 8px; z-index: 5; pointer-events: none; }
         .slot { width: 60px; height: 60px; border: 2px solid #444; background: rgba(0,0,0,0.85); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border-radius: 6px; text-align: center; }
         .slot-key { color: #ffcc00; font-size: 10px; margin-bottom: 2px; }
 
-        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 28px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; z-index: 5; }
-        #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; z-index: 5; }
+        #msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #ff3333; font-size: 26px; font-weight: bold; text-align: center; text-shadow: 2px 2px 5px black; z-index: 5; pointer-events: none; }
+        #room-info { position: absolute; top: 15px; right: 15px; color: #aaa; font-size: 14px; text-align: right; z-index: 5; pointer-events: none; }
 
         #jumpscare {
             display: none;
@@ -39,52 +39,26 @@ game_html = """
             align-items: center;
         }
         #scare-face {
-            width: 320px;
-            height: 320px;
+            width: 300px;
+            height: 300px;
             background: radial-gradient(circle, #ff0000 0%, #330000 70%, #000000 100%);
             border-radius: 50%;
             position: relative;
             box-shadow: 0 0 60px #ff0000;
             animation: shake 0.05s infinite alternate;
         }
-        .eye {
-            position: absolute;
-            top: 35%;
-            width: 70px;
-            height: 70px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: inset 0 0 15px #000;
-        }
+        .eye { position: absolute; top: 35%; width: 65px; height: 65px; background: #fff; border-radius: 50%; box-shadow: inset 0 0 15px #000; }
         .eye.left { left: 20%; }
         .eye.right { right: 20%; }
-        .pupil {
-            position: absolute;
-            top: 25%; left: 25%;
-            width: 35px; height: 35px;
-            background: #000;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #ff0000;
-        }
-        .mouth {
-            position: absolute;
-            bottom: 15%; left: 20%;
-            width: 60%; height: 90px;
-            background: #000;
-            border-radius: 0 0 50px 50px;
-            border: 4px solid #880000;
-        }
-        #scare-text {
-            color: #ff0000;
-            font-size: 36px;
-            font-weight: 900;
-            margin-top: 20px;
-            text-shadow: 0 0 10px #ff0000;
-        }
+        .pupil { position: absolute; top: 25%; left: 25%; width: 30px; height: 30px; background: #000; border-radius: 50%; box-shadow: 0 0 10px #ff0000; }
+        .mouth { position: absolute; bottom: 15%; left: 20%; width: 60%; height: 80px; background: #000; border-radius: 0 0 50px 50px; border: 4px solid #880000; }
+        #scare-text { color: #ff0000; font-size: 32px; font-weight: 900; margin-top: 20px; text-shadow: 0 0 10px #ff0000; }
+        #restart-btn { margin-top: 15px; padding: 10px 20px; font-size: 16px; background: #333; color: white; border: 1px solid #777; cursor: pointer; border-radius: 5px; }
+        #restart-btn:hover { background: #555; }
 
         @keyframes shake {
-            0% { transform: translate(4px, 4px) scale(1.1); }
-            100% { transform: translate(-4px, -4px) scale(1.15); }
+            0% { transform: translate(4px, 4px) scale(1.05); }
+            100% { transform: translate(-4px, -4px) scale(1.1); }
         }
     </style>
 </head>
@@ -106,7 +80,6 @@ game_html = """
         <div>목표: 열쇠를 찾아 탈출하라</div>
     </div>
     
-    <!-- 오른쪽 하단 인벤토리 -->
     <div id="inventory">
         <div class="slot" id="slot1"><span class="slot-key">[1]</span>회복약<br><span id="cnt-potion">0</span></div>
         <div class="slot" id="slot2"><span class="slot-key">[2]</span>배터리<br><span id="cnt-battery">0</span></div>
@@ -114,7 +87,8 @@ game_html = """
         <div class="slot" id="slot4"><span class="slot-key">[4]</span>열쇠<br><span id="cnt-key">X</span></div>
     </div>
 
-    <div id="msg">게임 화면을 클릭해 시작하세요</div>
+    <div id="msg">화면을 클릭하여 게임을 시작하세요</div>
+    
     <div id="jumpscare">
         <div id="scare-face">
             <div class="eye left"><div class="pupil"></div></div>
@@ -122,7 +96,9 @@ game_html = """
             <div class="mouth"></div>
         </div>
         <div id="scare-text">💀 원혼에게 붙잡혔습니다! 💀</div>
+        <button id="restart-btn" onclick="resetGame()">다시 시도하기</button>
     </div>
+    
     <canvas id="canvas"></canvas>
 
 <script>
@@ -131,7 +107,19 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 530;
 
-const houseMap = [
+let houseMap = [];
+let px = 7.5, py = 7.5;
+let angle = 0;
+let hp = 100;
+let stamina = 100;
+let flashRange = 10;
+let gameOver = false;
+let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
+let isAttacking = 0;
+let ghosts = [];
+let zBuffer = new Array(160).fill(0);
+
+const initialMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,7,0,10,1,8,0,0,1,9,0,11,4,0,1],
     [1,7,0,0,1,0,0,0,1,0,0,0,0,0,1],
@@ -149,20 +137,29 @@ const houseMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-let px = 7.5, py = 7.5;
-let angle = 0;
-let hp = 100;
-let stamina = 100;
-let flashRange = 10;
-let gameOver = false;
+function initGame() {
+    houseMap = JSON.parse(JSON.stringify(initialMap));
+    px = 7.5; py = 7.5;
+    angle = 0;
+    hp = 100;
+    stamina = 100;
+    flashRange = 10;
+    gameOver = false;
+    items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
+    isAttacking = 0;
+    ghosts = [
+        { x: 1.5, y: 1.5, hp: 80, stun: 0 },
+        { x: 13.5, y: 13.5, hp: 80, stun: 0 }
+    ];
+    document.getElementById('jumpscare').style.display = 'none';
+    document.getElementById('msg').innerText = "화면을 클릭하여 게임을 시작하세요";
+    document.getElementById('msg').style.color = "#ff3333";
+    updateUI();
+}
 
-let items = { potion: 0, battery: 0, talisman: 1, key: false, knife: false };
-let isAttacking = 0;
-
-let ghosts = [
-    { x: 1.5, y: 1.5, hp: 80, stun: 0 },
-    { x: 13.5, y: 13.5, hp: 80, stun: 0 }
-];
+function resetGame() {
+    initGame();
+}
 
 const keys = {};
 
@@ -178,29 +175,30 @@ function parseKey(k) {
     return k;
 }
 
-// 1, 2, 3, 4 키 아이템 사용
 window.addEventListener('keydown', e => {
     let k = parseKey(e.key);
     keys[k] = true;
     
-    if (e.key === '1' && items.potion > 0) { 
-        hp = Math.min(100, hp + 50); 
-        items.potion--; 
-        updateUI(); 
-    }
-    if (e.key === '2' && items.battery > 0) { 
-        flashRange = 14; 
-        items.battery--; 
-        updateUI(); 
-    }
-    if (e.key === '3' && items.talisman > 0) { 
-        ghosts.forEach(g => g.stun = 180); 
-        items.talisman--; 
-        updateUI(); 
-    }
-    if (e.key === '4' && items.key) {
-        document.getElementById('msg').innerText = "🔑 열쇠를 준비했습니다. 탈출구(3)로 가세요!";
-        setTimeout(() => { if (!gameOver) document.getElementById('msg').innerText = ""; }, 2000);
+    if (!gameOver) {
+        if (e.key === '1' && items.potion > 0) { 
+            hp = Math.min(100, hp + 50); 
+            items.potion--; 
+            updateUI(); 
+        }
+        if (e.key === '2' && items.battery > 0) { 
+            flashRange = 15; 
+            items.battery--; 
+            updateUI(); 
+        }
+        if (e.key === '3' && items.talisman > 0) { 
+            ghosts.forEach(g => g.stun = 240); 
+            items.talisman--; 
+            updateUI(); 
+        }
+        if (e.key === '4' && items.key) {
+            document.getElementById('msg').innerText = "🔑 열쇠 준비됨! 출구(탈출문)로 가세요.";
+            setTimeout(() => { if (!gameOver) document.getElementById('msg').innerText = ""; }, 2500);
+        }
     }
 });
 
@@ -210,7 +208,10 @@ window.addEventListener('keyup', e => {
 });
 
 canvas.addEventListener('click', () => {
-    document.getElementById('msg').innerText = "";
+    window.focus();
+    if (document.getElementById('msg').innerText.includes("클릭")) {
+        document.getElementById('msg').innerText = "";
+    }
     if (items.knife && isAttacking === 0 && !gameOver) {
         isAttacking = 10;
         checkAttackHit();
@@ -226,9 +227,9 @@ function checkAttackHit() {
         while (gAngle < -Math.PI) gAngle += 2 * Math.PI;
         while (gAngle > Math.PI) gAngle -= 2 * Math.PI;
 
-        if (dist < 1.8 && Math.abs(gAngle) < 0.5) {
+        if (dist < 1.8 && Math.abs(gAngle) < 0.6) {
             g.hp -= 40;
-            g.stun = 35;
+            g.stun = 40;
         }
     });
 }
@@ -250,6 +251,7 @@ function updateUI() {
 }
 
 function isSolid(x, y) {
+    if (x < 0 || x >= 15 || y < 0 || y >= 15) return true;
     let cell = houseMap[Math.floor(y)][Math.floor(x)];
     return cell === 1 || (cell >= 7 && cell <= 11);
 }
@@ -270,10 +272,10 @@ function update() {
     let isMoving = keys['w'] || keys['s'] || keys['a'] || keys['d'];
 
     if (keys['e'] && isMoving && stamina >= 0.5) {
-        speed = 0.08;
-        stamina = Math.max(0, stamina - 0.5);
+        speed = 0.07;
+        stamina = Math.max(0, stamina - 0.4);
     } else {
-        stamina = Math.min(100, stamina + 0.1);
+        stamina = Math.min(100, stamina + 0.15);
     }
 
     let dx = 0, dy = 0;
@@ -282,8 +284,9 @@ function update() {
     if (keys['a']) { dx += Math.sin(angle) * speed; dy -= Math.cos(angle) * speed; }
     if (keys['d']) { dx -= Math.sin(angle) * speed; dy += Math.cos(angle) * speed; }
 
-    if (!isSolid(px + dx, py)) px += dx;
-    if (!isSolid(px, py + dy)) py += dy;
+    const margin = 0.25;
+    if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
+    if (!isSolid(px, py + dy + Math.sign(dy)*margin)) py += dy;
 
     let ix = Math.floor(px), iy = Math.floor(py);
     let cell = houseMap[iy][ix];
@@ -306,14 +309,12 @@ function update() {
             let gdx = px - g.x, gdy = py - g.y;
             let dist = Math.sqrt(gdx*gdx + gdy*gdy);
             if (dist > 0.1) {
-                g.x += (gdx / dist) * 0.007;
-                g.y += (gdy / dist) * 0.007;
+                g.x += (gdx / dist) * 0.008;
+                g.y += (gdy / dist) * 0.008;
             }
             if (dist < 0.6) {
-                hp -= 2.0;
-                if (hp <= 0) {
-                    triggerJumpscare();
-                }
+                hp -= 1.5;
+                if (hp <= 0) triggerJumpscare();
             }
         }
     });
@@ -321,74 +322,32 @@ function update() {
     if (isAttacking > 0) isAttacking--;
 }
 
-function renderFurniture(type, sx, canvasHeight, size) {
-    ctx.save();
-    if (type === 7) {
-        ctx.fillStyle = '#3a200d';
-        ctx.fillRect(sx - size/2, canvasHeight/2, size, size/2);
-        ctx.fillStyle = '#221307';
-        ctx.fillRect(sx - size/2, canvasHeight/2 + size/4, size, size/8);
-    } else if (type === 8) {
-        ctx.fillStyle = '#2e1c0c';
-        ctx.fillRect(sx - size/2, canvasHeight/2 + size/6, size, size/3);
-    } else if (type === 9) {
-        ctx.fillStyle = '#221208';
-        ctx.fillRect(sx - size/3, canvasHeight/2 - size/6, size/1.5, size/1.2);
-    } else if (type === 10) {
-        ctx.fillStyle = '#422814';
-        ctx.fillRect(sx - size/4, canvasHeight/2 + size/8, size/2, size/2);
-    } else if (type === 11) {
-        ctx.fillStyle = '#170c05';
-        ctx.fillRect(sx - size/2.5, canvasHeight/2 - size/2, size/1.25, size);
-    }
-    ctx.restore();
-}
+function renderMinimap() {
+    const size = 6;
+    const offsetX = 15;
+    const offsetY = canvas.height - (15 * size) - 15;
 
-function renderGhost(sx, canvasHeight, size, isStunned) {
-    ctx.save();
-    let topY = canvasHeight / 2 - size / 2;
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(offsetX - 2, offsetY - 2, 15 * size + 4, 15 * size + 4);
 
-    // 검은 로브/후드 실루엣
-    ctx.fillStyle = isStunned ? '#1a3a3a' : '#0a0a0d';
-    ctx.beginPath();
-    ctx.moveTo(sx, topY); 
-    ctx.quadraticCurveTo(sx + size/2, topY + size/4, sx + size/3, topY + size);
-    ctx.lineTo(sx - size/3, topY + size);
-    ctx.quadraticCurveTo(sx - size/2, topY + size/4, sx, topY);
-    ctx.fill();
-
-    // 얼굴 내부의 짙은 어둠
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.ellipse(sx, topY + size/3, size/6, size/4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 붉게 빛나는 눈동자 (스턴 시 청록색)
-    ctx.fillStyle = isStunned ? '#00ffff' : '#ff0000';
-    ctx.shadowColor = isStunned ? '#00ffff' : '#ff0000';
-    ctx.shadowBlur = 15;
-
-    ctx.beginPath();
-    ctx.arc(sx - size/12, topY + size/3.2, size/28, 0, Math.PI * 2);
-    ctx.arc(sx + size/12, topY + size/3.2, size/28, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 스턴 시 안개/아우라 연출
-    if (isStunned) {
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(sx, topY + size/3, size/3, 0, Math.PI * 2);
-        ctx.stroke();
+    for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+            if (houseMap[r][c] === 1) ctx.fillStyle = "#555";
+            else if (houseMap[r][c] === 3) ctx.fillStyle = "gold";
+            else ctx.fillStyle = "#111";
+            ctx.fillRect(offsetX + c * size, offsetY + r * size, size - 1, size - 1);
+        }
     }
 
-    ctx.restore();
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(offsetX + px * size, offsetY + py * size, 2.5, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function render() {
     ctx.fillStyle = '#050403';
     ctx.fillRect(0, 0, canvas.width, canvas.height/2);
-    
     ctx.fillStyle = '#0f0b07';
     ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
@@ -401,70 +360,37 @@ function render() {
         let distance = 0;
         let hit = false;
         let hitType = 1;
-        let hitX = 0, hitY = 0;
 
         while (!hit && distance < flashRange) {
-            distance += 0.04;
+            distance += 0.03;
             let rx = px + Math.cos(rayAngle) * distance;
             let ry = py + Math.sin(rayAngle) * distance;
             let tx = Math.floor(rx);
             let ty = Math.floor(ry);
 
             if (tx < 0 || tx >= 15 || ty < 0 || ty >= 15) {
-                hit = true;
-                hitType = 1;
+                hit = true; hitType = 1;
             } else if (isSolid(tx, ty)) {
-                hit = true;
-                hitType = houseMap[ty][tx];
-                hitX = rx - tx;
-                hitY = ry - ty;
+                hit = true; hitType = houseMap[ty][tx];
             }
         }
 
         let correctedDist = distance * Math.cos(rayAngle - angle);
+        zBuffer[i] = correctedDist;
+
         let h = Math.min(canvas.height, canvas.height / (correctedDist + 0.0001));
         let shade = Math.max(0, Math.floor(180 - correctedDist * (180 / flashRange)));
 
-        let edge = (hitX < 0.05 || hitX > 0.95 || hitY < 0.05 || hitY > 0.95) ? 0.7 : 1.0;
-        let r = Math.floor(shade * 0.5 * edge);
-        let g = Math.floor(shade * 0.25 * edge);
-        let b = Math.floor(shade * 0.15 * edge);
+        let r = Math.floor(shade * 0.5);
+        let g = Math.floor(shade * 0.25);
+        let b = Math.floor(shade * 0.15);
 
-        if (hitType === 1) {
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        } else {
-            ctx.fillStyle = `rgb(${Math.floor(r*0.7)}, ${Math.floor(g*0.7)}, ${Math.floor(b*0.7)})`;
-        }
-        
+        ctx.fillStyle = (hitType === 1) ? `rgb(${r}, ${g}, ${b})` : `rgb(${Math.floor(r*0.6)}, ${Math.floor(g*0.6)}, ${Math.floor(b*0.6)})`;
         let topY = (canvas.height - h) / 2;
         ctx.fillRect(i * w, topY, w + 1, h);
-
-        ctx.fillStyle = `rgba(0,0,0,${Math.min(1, correctedDist/8)})`;
-        ctx.fillRect(i * w, topY + h - (h*0.1), w + 1, h*0.1);
     }
 
-    for (let y = 0; y < 15; y++) {
-        for (let x = 0; x < 15; x++) {
-            let cell = houseMap[y][x];
-            if (cell >= 7 && cell <= 11) {
-                let fdx = (x + 0.5) - px;
-                let fdy = (y + 0.5) - py;
-                let fDist = Math.sqrt(fdx*fdx + fdy*fdy);
-                let fAngle = Math.atan2(fdy, fdx) - angle;
-
-                while (fAngle < -Math.PI) fAngle += 2 * Math.PI;
-                while (fAngle > Math.PI) fAngle -= 2 * Math.PI;
-
-                if (Math.abs(fAngle) < fov / 2 && fDist < flashRange) {
-                    let sx = (canvas.width / 2) + Math.tan(fAngle) * (canvas.width / 2);
-                    let size = Math.min(280, canvas.height / fDist);
-                    renderFurniture(cell, sx, canvas.height, size);
-                }
-            }
-        }
-    }
-
-    // 새로운 귀신 비주얼 렌더링
+    // 귀신 렌더링
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -476,22 +402,43 @@ function render() {
 
         if (Math.abs(gAngle) < fov / 2 && gDist < flashRange) {
             let sx = (canvas.width / 2) + Math.tan(gAngle) * (canvas.width / 2);
-            let size = Math.min(380, canvas.height / gDist);
-            renderGhost(sx, canvas.height, size, g.stun > 0);
+            let rayIndex = Math.floor((sx / canvas.width) * numRays);
+            
+            if (rayIndex >= 0 && rayIndex < numRays && gDist < zBuffer[rayIndex]) {
+                let size = Math.min(380, canvas.height / gDist);
+                
+                ctx.save();
+                let topY = canvas.height / 2 - size / 2;
+                ctx.fillStyle = g.stun > 0 ? '#1a3a3a' : '#0a0a0d';
+                ctx.beginPath();
+                ctx.arc(sx, topY + size/3, size/4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = g.stun > 0 ? '#00ffff' : '#ff0000';
+                ctx.shadowColor = g.stun > 0 ? '#00ffff' : '#ff0000';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(sx - size/12, topY + size/3, size/30, 0, Math.PI * 2);
+                ctx.arc(sx + size/12, topY + size/3, size/30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
         }
     });
 
     if (items.knife) {
         ctx.save();
-        let attackOffset = isAttacking * 9;
-        ctx.fillStyle = '#ccc';
+        let attackOffset = isAttacking * 8;
+        ctx.fillStyle = '#aaa';
         ctx.beginPath();
-        ctx.moveTo(canvas.width/2 + 90 - attackOffset, canvas.height - 10 - attackOffset);
-        ctx.lineTo(canvas.width/2 + 140 - attackOffset, canvas.height - 130 - attackOffset);
-        ctx.lineTo(canvas.width/2 + 160 - attackOffset, canvas.height - 110 - attackOffset);
+        ctx.moveTo(canvas.width/2 + 80 - attackOffset, canvas.height - attackOffset);
+        ctx.lineTo(canvas.width/2 + 130 - attackOffset, canvas.height - 120 - attackOffset);
+        ctx.lineTo(canvas.width/2 + 150 - attackOffset, canvas.height - 100 - attackOffset);
         ctx.fill();
         ctx.restore();
     }
+
+    renderMinimap();
 }
 
 function loop() {
@@ -500,10 +447,11 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+initGame();
 loop();
 </script>
 </body>
 </html>
 """
 
-components.html(game_html, height=550)
+components.html(game_html, height=560)
