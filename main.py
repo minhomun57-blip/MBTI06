@@ -1,41 +1,33 @@
-```python
 import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="🏚️ 저주받은 저택 - 개선판",
-    layout="wide",
+page_title="🏚️ 저주받은 저택 - 방 & 가구 에디션",
+layout="wide"
 )
 
-st.title("🏚️ 저주받은 저택: 개선된 호러 에디션")
+st.title("🏚️ 저주받은 저택: 디테일해진 문과 가구들")
 st.caption(
-    "W/S: 전후 이동 | A/D: 좌우 이동 | ←/→: 시점 회전 | "
-    "E: 달리기 | R: 문/아이템 상호작용 | 1: 회복 | "
-    "2: 손전등 강화 | 3: 퇴마부적 | 클릭: 공격"
+"조작 방법 | W/A/S/D: 이동 | 방향키(←/→): 회전 | "
+"마우스 드래그: 시점 회전 | E: 달리기 | "
+"R: 문 열기/아이템 획득 | 1,2,3: 아이템 사용 | 클릭: 공격"
 )
 
 horror_game_html = r"""
+
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta charset="utf-8">
 
 <style>
-html, body {
+body {
     margin: 0;
-    padding: 0;
-    background: #000;
     overflow: hidden;
+    background: #000;
     font-family: 'Courier New', monospace;
     user-select: none;
-}
-
-#game-wrapper {
-    position: relative;
-    width: 100%;
-    height: 620px;
-    overflow: hidden;
-    background: #000;
 }
 
 #canvas {
@@ -43,7 +35,6 @@ html, body {
     height: 580px;
     display: block;
     cursor: grab;
-    outline: none;
 }
 
 #canvas:active {
@@ -60,7 +51,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: 10;
+    z-index: 5;
     pointer-events: none;
 }
 
@@ -93,7 +84,7 @@ html, body {
     right: 15px;
     display: flex;
     gap: 8px;
-    z-index: 10;
+    z-index: 5;
     pointer-events: none;
 }
 
@@ -129,10 +120,9 @@ html, body {
     font-weight: bold;
     text-align: center;
     text-shadow: 0 0 10px #000;
-    z-index: 10;
+    z-index: 5;
     pointer-events: none;
     letter-spacing: 1px;
-    max-width: 80%;
 }
 
 #room-info {
@@ -142,40 +132,8 @@ html, body {
     color: #aaa;
     font-size: 11px;
     text-align: right;
-    z-index: 10;
+    z-index: 5;
     pointer-events: none;
-}
-
-#crosshair {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 12px;
-    height: 12px;
-    transform: translate(-50%, -50%);
-    z-index: 8;
-    pointer-events: none;
-}
-
-#crosshair::before,
-#crosshair::after {
-    content: "";
-    position: absolute;
-    background: rgba(255,255,255,0.7);
-}
-
-#crosshair::before {
-    width: 12px;
-    height: 1px;
-    top: 5px;
-    left: 0;
-}
-
-#crosshair::after {
-    width: 1px;
-    height: 12px;
-    top: 0;
-    left: 5px;
 }
 
 #glitch-overlay {
@@ -185,7 +143,7 @@ html, body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 7;
+    z-index: 4;
     opacity: 0;
     background:
         repeating-linear-gradient(
@@ -197,54 +155,36 @@ html, body {
         );
 }
 
-#ending,
 #jumpscare {
     display: none;
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 580px;
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
+    height: 100%;
+    background-color: #050000;
+    z-index: 99;
     flex-direction: column;
-    text-align: center;
-}
-
-#ending {
-    background:
-        radial-gradient(circle, rgba(80,80,30,0.5), #020202 70%);
-    color: #ffd700;
-}
-
-#ending h1 {
-    font-size: 42px;
-    letter-spacing: 8px;
-    text-shadow: 0 0 25px #ffcc00;
-}
-
-#ending p {
-    color: #ddd;
-    font-size: 16px;
-    line-height: 2;
-}
-
-#jumpscare {
-    background: #050000;
+    justify-content: center;
+    align-items: center;
     animation: flash-red 0.08s infinite alternate;
 }
 
 @keyframes flash-red {
     0% { background-color: #000; }
-    100% { background-color: #250000; }
+    100% { background-color: #200000; }
 }
 
 #scare-face {
     width: 340px;
     height: 400px;
     background:
-        radial-gradient(circle, #800 0%, #200 50%, #000 100%);
+        radial-gradient(
+            circle,
+            #800 0%,
+            #200 50%,
+            #000 100%
+        );
     border-radius: 45% 45% 50% 50%;
     position: relative;
     box-shadow: 0 0 150px #f00;
@@ -258,7 +198,9 @@ html, body {
     height: 85px;
     background: #fff;
     border-radius: 50%;
-    box-shadow: inset 0 0 30px #f00, 0 0 20px #ff0000;
+    box-shadow:
+        inset 0 0 30px #f00,
+        0 0 20px #ff0000;
 }
 
 .eye.left {
@@ -322,13 +264,14 @@ html, body {
 
 #scare-text {
     color: #ff0000;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 900;
-    margin-top: 25px;
+    margin-top: 30px;
     text-shadow: 0 0 25px #ff0000;
+    letter-spacing: 4px;
 }
 
-.game-button {
+#restart-btn {
     margin-top: 25px;
     padding: 12px 32px;
     font-size: 15px;
@@ -339,47 +282,51 @@ html, body {
     font-weight: bold;
 }
 
-.game-button:hover {
+#restart-btn:hover {
     background: #400;
     color: #fff;
 }
 
 @keyframes violent-shake {
     0% {
-        transform: translate(10px, -10px) scale(1.1);
+        transform: translate(10px,-10px) scale(1.1);
     }
+
     100% {
-        transform: translate(-10px, 10px) scale(1.22);
+        transform: translate(-10px,10px) scale(1.22);
     }
 }
 </style>
+
 </head>
 
 <body>
 
-<div id="game-wrapper">
-
 <div id="glitch-overlay"></div>
 
 <div id="ui">
-    <div>
-        <span>생명력</span>
-        <div class="bar-container">
-            <div id="hp-bar" class="bar-fill"></div>
-        </div>
-    </div>
 
-    <div>
-        <span>스테미나</span>
-        <div class="bar-container">
-            <div id="stamina-bar" class="bar-fill"></div>
-        </div>
+```
+<div>
+    <span>생명력</span>
+    <div class="bar-container">
+        <div id="hp-bar" class="bar-fill"></div>
     </div>
+</div>
 
-    <div>
-        무기:
-        <span id="weapon" style="color:#ffcc00;">맨손</span>
+<div>
+    <span>스테미나 (E: 달리기)</span>
+    <div class="bar-container">
+        <div id="stamina-bar" class="bar-fill"></div>
     </div>
+</div>
+
+<div>
+    무기:
+    <span id="weapon" style="color:#ffcc00;">맨손</span>
+</div>
+```
+
 </div>
 
 <div id="room-info">
@@ -390,102 +337,82 @@ html, body {
         현재 위치: 중앙 복도
     </div>
 
-    <div>
-        W/S 이동 · A/D 좌우 이동 · ←/→ 회전
-    </div>
+```
+<div>
+    화면을 클릭하여 조작하세요
+</div>
+```
+
 </div>
 
 <div id="inventory">
 
-    <div class="slot">
-        <span class="slot-key">[1]</span>
-        회복약<br>
-        <span id="cnt-potion">0</span>
-    </div>
+```
+<div class="slot" id="slot1">
+    <span class="slot-key">[1]</span>
+    회복약<br>
+    <span id="cnt-potion">0</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[2]</span>
-        배터리<br>
-        <span id="cnt-battery">0</span>
-    </div>
+<div class="slot" id="slot2">
+    <span class="slot-key">[2]</span>
+    배터리<br>
+    <span id="cnt-battery">0</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[3]</span>
-        퇴마부적<br>
-        <span id="cnt-talisman">1</span>
-    </div>
+<div class="slot" id="slot3">
+    <span class="slot-key">[3]</span>
+    퇴마부적<br>
+    <span id="cnt-talisman">1</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[4]</span>
-        탈출열쇠<br>
-        <span id="cnt-key">미획득</span>
-    </div>
+<div class="slot" id="slot4">
+    <span class="slot-key">[4]</span>
+    탈출열쇠<br>
+    <span id="cnt-key">미획득</span>
+</div>
+```
 
 </div>
 
-<div id="crosshair"></div>
-
 <div id="msg">
-    화면을 클릭한 뒤 W/A/S/D로 이동하세요
+    문 앞이나 아이템 근처에서 [R] 키를 눌러 상호작용하세요
 </div>
 
 <div id="jumpscare">
 
-    <div id="scare-face">
+```
+<div id="scare-face">
 
-        <div class="eye left">
-            <div class="pupil"></div>
-        </div>
-
-        <div class="eye right">
-            <div class="pupil"></div>
-        </div>
-
-        <div class="mouth">
-            <div class="teeth"></div>
-            <div class="blood-drip"></div>
-        </div>
-
+    <div class="eye left">
+        <div class="pupil"></div>
     </div>
 
-    <div id="scare-text">
-        당신의 영혼은 이제 저택의 일부입니다...
+    <div class="eye right">
+        <div class="pupil"></div>
     </div>
 
-    <button
-        class="game-button"
-        onclick="resetGame()"
-    >
-        다시 도전하기
-    </button>
+    <div class="mouth">
+        <div class="teeth"></div>
+        <div class="blood-drip"></div>
+    </div>
 
 </div>
 
-<div id="ending">
+<div id="scare-text">
+    당신의 영혼은 이제 저택의 일부입니다...
+</div>
 
-    <h1>탈출 성공</h1>
-
-    <p>
-        피묻은 열쇠로 마지막 문을 열었습니다.<br>
-        저택의 저주는 당신을 붙잡지 못했습니다.
-    </p>
-
-    <button
-        class="game-button"
-        onclick="resetGame()"
-    >
-        다시 플레이
-    </button>
+<button id="restart-btn" onclick="resetGame()">
+    다시 도전하기
+</button>
+```
 
 </div>
 
 <canvas id="canvas" tabindex="0"></canvas>
 
 <script>
-
-/* =========================================================
-   AUDIO
-========================================================= */
 
 const AudioContext =
     window.AudioContext ||
@@ -494,7 +421,6 @@ const AudioContext =
 let audioCtx = null;
 
 function initAudio() {
-
     if (!audioCtx) {
         audioCtx = new AudioContext();
     }
@@ -510,28 +436,19 @@ function playSound(type) {
 
     const now = audioCtx.currentTime;
 
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
     if (type === "attack") {
 
         osc.type = "sawtooth";
-
-        osc.frequency.setValueAtTime(
-            140,
-            now
-        );
-
+        osc.frequency.setValueAtTime(140, now);
         osc.frequency.exponentialRampToValueAtTime(
             30,
             now + 0.15
         );
 
-        gain.gain.setValueAtTime(
-            0.4,
-            now
-        );
-
+        gain.gain.setValueAtTime(0.4, now);
         gain.gain.exponentialRampToValueAtTime(
             0.01,
             now + 0.15
@@ -540,29 +457,19 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
+        osc.start(now);
         osc.stop(now + 0.15);
-    }
 
-    else if (type === "hit") {
+    } else if (type === "hit") {
 
         osc.type = "square";
-
-        osc.frequency.setValueAtTime(
-            80,
-            now
-        );
-
+        osc.frequency.setValueAtTime(80, now);
         osc.frequency.exponentialRampToValueAtTime(
             15,
             now + 0.2
         );
 
-        gain.gain.setValueAtTime(
-            0.5,
-            now
-        );
-
+        gain.gain.setValueAtTime(0.5, now);
         gain.gain.exponentialRampToValueAtTime(
             0.01,
             now + 0.2
@@ -571,29 +478,19 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
+        osc.start(now);
         osc.stop(now + 0.2);
-    }
 
-    else if (type === "item") {
+    } else if (type === "item") {
 
         osc.type = "sine";
-
-        osc.frequency.setValueAtTime(
-            520,
-            now
-        );
-
+        osc.frequency.setValueAtTime(520, now);
         osc.frequency.exponentialRampToValueAtTime(
             1040,
             now + 0.18
         );
 
-        gain.gain.setValueAtTime(
-            0.3,
-            now
-        );
-
+        gain.gain.setValueAtTime(0.3, now);
         gain.gain.exponentialRampToValueAtTime(
             0.01,
             now + 0.18
@@ -602,29 +499,19 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
+        osc.start(now);
         osc.stop(now + 0.18);
-    }
 
-    else if (type === "door") {
+    } else if (type === "door") {
 
         osc.type = "triangle";
-
-        osc.frequency.setValueAtTime(
-            120,
-            now
-        );
-
+        osc.frequency.setValueAtTime(120, now);
         osc.frequency.linearRampToValueAtTime(
             60,
             now + 0.3
         );
 
-        gain.gain.setValueAtTime(
-            0.4,
-            now
-        );
-
+        gain.gain.setValueAtTime(0.4, now);
         gain.gain.exponentialRampToValueAtTime(
             0.01,
             now + 0.3
@@ -633,19 +520,14 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
+        osc.start(now);
         osc.stop(now + 0.3);
-    }
 
-    else if (type === "jumpscare") {
+    } else if (type === "jumpscare") {
 
         osc.type = "sawtooth";
 
-        osc.frequency.setValueAtTime(
-            180,
-            now
-        );
-
+        osc.frequency.setValueAtTime(180, now);
         osc.frequency.linearRampToValueAtTime(
             1100,
             now + 0.08
@@ -656,11 +538,7 @@ function playSound(type) {
             now + 1.2
         );
 
-        gain.gain.setValueAtTime(
-            1,
-            now
-        );
-
+        gain.gain.setValueAtTime(1.0, now);
         gain.gain.exponentialRampToValueAtTime(
             0.01,
             now + 1.2
@@ -669,38 +547,23 @@ function playSound(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
+        osc.start(now);
         osc.stop(now + 1.2);
     }
 }
 
-
-/* =========================================================
-   CANVAS
-========================================================= */
-
-const canvas =
-    document.getElementById("canvas");
-
-const ctx =
-    canvas.getContext("2d");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
 canvas.width = 800;
 canvas.height = 580;
 
-
-/* =========================================================
-   TEXTURES
-========================================================= */
-
-const wallTex =
-    document.createElement("canvas");
+const wallTex = document.createElement("canvas");
 
 wallTex.width = 64;
 wallTex.height = 64;
 
-const wCtx =
-    wallTex.getContext("2d");
+const wCtx = wallTex.getContext("2d");
 
 wCtx.fillStyle = "#2d1d1a";
 wCtx.fillRect(0, 0, 64, 64);
@@ -709,19 +572,12 @@ wCtx.fillStyle = "#140a08";
 
 for (let i = 0; i < 64; i += 16) {
 
-    wCtx.fillRect(
-        0,
-        i,
-        64,
-        2
-    );
+    wCtx.fillRect(0, i, 64, 2);
 
     for (let j = 0; j < 64; j += 16) {
 
         const offset =
-            (i / 16) % 2 === 0
-                ? 0
-                : 8;
+            (i / 16) % 2 === 0 ? 0 : 8;
 
         wCtx.fillRect(
             j + offset,
@@ -732,15 +588,12 @@ for (let i = 0; i < 64; i += 16) {
     }
 }
 
-
-const doorTex =
-    document.createElement("canvas");
+const doorTex = document.createElement("canvas");
 
 doorTex.width = 64;
 doorTex.height = 64;
 
-const dCtx =
-    doorTex.getContext("2d");
+const dCtx = doorTex.getContext("2d");
 
 dCtx.fillStyle = "#221108";
 dCtx.fillRect(0, 0, 64, 64);
@@ -751,30 +604,15 @@ dCtx.fillRect(3, 3, 58, 58);
 dCtx.fillStyle = "#3a200f";
 
 for (let x = 4; x < 60; x += 6) {
-    dCtx.fillRect(
-        x,
-        4,
-        2,
-        56
-    );
+    dCtx.fillRect(x, 4, 2, 56);
 }
-
-
-/* 문 패널 */
 
 function drawPanel(px, py, pw, ph) {
 
     dCtx.fillStyle = "#1e0d05";
-
-    dCtx.fillRect(
-        px,
-        py,
-        pw,
-        ph
-    );
+    dCtx.fillRect(px, py, pw, ph);
 
     dCtx.fillStyle = "#5c381d";
-
     dCtx.fillRect(
         px + 2,
         py + 2,
@@ -783,7 +621,6 @@ function drawPanel(px, py, pw, ph) {
     );
 
     dCtx.fillStyle = "#361d0d";
-
     dCtx.fillRect(
         px + 4,
         py + 4,
@@ -797,110 +634,87 @@ drawPanel(35, 8, 21, 22);
 drawPanel(8, 34, 21, 22);
 drawPanel(35, 34, 21, 22);
 
+dCtx.fillStyle = "#8a6818";
+dCtx.fillRect(50, 28, 6, 14);
 
-/* =========================================================
-   MAP
-========================================================= */
+dCtx.fillStyle = "#ffcc00";
+dCtx.fillRect(51, 29, 4, 12);
+
+dCtx.fillStyle = "#ffe066";
+dCtx.fillRect(44, 32, 8, 4);
+
+dCtx.beginPath();
+dCtx.arc(53, 31, 3, 0, Math.PI * 2);
+dCtx.fill();
+
+dCtx.fillStyle = "#000";
+dCtx.fillRect(52, 36, 2, 3);
+
+let houseMap = [];
 
 const initialMap = [
-
 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-
 [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
-
 [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
-
 [1,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
-
 [1,1,1,1,1,0,1,1,2,1,1,1,2,1,1,0,1,1,1,1,1],
-
 [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
-
 [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1],
-
 [1,0,1,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,1,0,1],
-
 [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
-
 [1,0,1,1,2,1,1,0,0,0,0,0,0,0,1,1,2,1,1,0,1],
-
 [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
 [1,0,1,1,2,1,1,0,0,0,0,0,0,0,1,1,2,1,1,0,1],
-
 [1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1],
-
 [1,0,1,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,1,0,1],
-
 [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1],
-
 [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
-
 [1,1,1,1,1,0,1,1,2,1,1,1,2,1,1,0,1,1,1,1,1],
-
 [1,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
-
 [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,0,1],
-
 [1,0,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,0,3,1],
-
 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-
 ];
 
-const MAP_SIZE = initialMap.length;
+let MAP_SIZE = initialMap.length;
 
+let px = 10.5;
+let py = 10.5;
 
-/* =========================================================
-   GAME STATE
-========================================================= */
+let angle = 0;
 
-let houseMap;
+let hp = 100;
+let stamina = 100;
 
-let px;
-let py;
+let flashRange = 12;
 
-let angle;
+let gameOver = false;
 
-let hp;
-let stamina;
+let items = {
+    potion: 0,
+    battery: 0,
+    talisman: 1,
+    key: false,
+    knife: false
+};
 
-let flashRange;
+let isAttacking = 0;
 
-let gameOver;
+let ghosts = [];
+let worldItems = [];
+let furnitureList = [];
 
-let gameWon;
-
-let items;
-
-let isAttacking;
-
-let ghosts;
-
-let worldItems;
-
-let furnitureList;
-
-let zBuffer =
-    new Array(160).fill(0);
+let zBuffer = new Array(160).fill(0);
 
 let screenShake = 0;
-
 let animTimer = 0;
 
 const fov = Math.PI * 0.42;
 
-
-/* =========================================================
-   GAME INITIALIZATION
-========================================================= */
-
 function initGame() {
 
     houseMap =
-        JSON.parse(
-            JSON.stringify(initialMap)
-        );
+        JSON.parse(JSON.stringify(initialMap));
 
     px = 10.5;
     py = 10.5;
@@ -913,9 +727,6 @@ function initGame() {
     flashRange = 12;
 
     gameOver = false;
-    gameWon = false;
-
-    isAttacking = 0;
 
     items = {
         potion: 0,
@@ -925,201 +736,157 @@ function initGame() {
         knife: false
     };
 
+    isAttacking = 0;
 
     ghosts = [
-
         {
             x: 2.5,
             y: 2.5,
             hp: 100,
             stun: 0
         },
-
         {
             x: 18.5,
             y: 2.5,
             hp: 100,
             stun: 0
         },
-
         {
             x: 2.5,
             y: 18.5,
             hp: 100,
             stun: 0
         }
-
     ];
 
-
     worldItems = [
-
         {
             x: 2.5,
             y: 1.5,
             type: "knife",
-            name: "녹슨 단검"
+            name: "녹슨 단검 (서재)"
         },
-
         {
             x: 18.5,
             y: 1.5,
             type: "potion",
-            name: "의용 회복제"
+            name: "의용 회복제 (응급실)"
         },
-
         {
             x: 1.5,
             y: 8.5,
             type: "battery",
-            name: "고전압 배터리"
+            name: "고전압 배터리 (창고)"
         },
-
         {
             x: 19.5,
             y: 8.5,
             type: "potion",
-            name: "의용 회복제"
+            name: "의용 회복제 (침실)"
         },
-
         {
             x: 1.5,
             y: 13.5,
             type: "battery",
-            name: "고전압 배터리"
+            name: "고전압 배터리 (연구실)"
         },
-
         {
             x: 18.5,
             y: 18.5,
             type: "key",
-            name: "피묻은 열쇠"
+            name: "피묻은 열쇠 (지하 밀실)"
         }
-
     ];
 
-
     furnitureList = [
-
         {
             x: 1.5,
             y: 2.5,
             type: "bookshelf",
-            name: "오래된 책장",
-            radius: 0.45
+            name: "오래된 책장"
         },
-
         {
             x: 3.5,
             y: 1.5,
             type: "desk",
-            name: "나무 책상",
-            radius: 0.55
+            name: "나무 책상"
         },
-
         {
             x: 3.5,
             y: 2.2,
             type: "chair",
-            name: "낡은 의자",
-            radius: 0.3
+            name: "낡은 의자"
         },
-
         {
             x: 19.5,
             y: 2.5,
             type: "bed",
-            name: "녹슨 침대",
-            radius: 0.7
+            name: "녹슨 침대"
         },
-
         {
             x: 17.5,
             y: 1.5,
             type: "cabinet",
-            name: "약품 보관함",
-            radius: 0.45
+            name: "약품 보관함"
         },
-
         {
             x: 9.5,
             y: 10.5,
             type: "clock",
-            name: "괘종시계",
-            radius: 0.35
+            name: "괘종시계"
         },
-
         {
             x: 11.5,
             y: 10.5,
             type: "chair",
-            name: "복도 의자",
-            radius: 0.3
+            name: "복도 의자"
         },
-
         {
             x: 10.5,
             y: 6.5,
             type: "candelabra",
-            name: "촛대",
-            radius: 0.2
+            name: "촛대"
         },
-
         {
             x: 10.5,
             y: 14.5,
             type: "candelabra",
-            name: "촛대",
-            radius: 0.2
+            name: "촛대"
         },
-
         {
             x: 1.5,
             y: 18.5,
             type: "bed",
-            name: "핏자국이 남은 침대",
-            radius: 0.7
+            name: "핏자국이 남은 침대"
         },
-
         {
             x: 3.5,
             y: 19.5,
             type: "bookshelf",
-            name: "작은 책장",
-            radius: 0.45
+            name: "작은 책장"
         },
-
         {
             x: 19.5,
             y: 17.5,
             type: "cabinet",
-            name: "철제 보관함",
-            radius: 0.45
+            name: "철제 보관함"
         },
-
         {
             x: 17.5,
             y: 19.5,
             type: "desk",
-            name: "실험용 책상",
-            radius: 0.55
+            name: "실험용 책상"
         }
-
     ];
-
 
     document.getElementById(
         "jumpscare"
     ).style.display = "none";
 
     document.getElementById(
-        "ending"
-    ).style.display = "none";
-
-    document.getElementById(
         "msg"
     ).innerText =
-        "문이나 아이템 가까이에서 R을 누르세요";
+        "문 앞이나 아이템 근처에서 [R] 키를 눌러 상호작용하세요";
 
     document.getElementById(
         "msg"
@@ -1132,270 +899,292 @@ function resetGame() {
     initGame();
 }
 
-
-/* =========================================================
-   INPUT
-========================================================= */
-
 const keys = {};
 
+function parseKey(k) {
 
-window.addEventListener(
-    "keydown",
-    function(e) {
+    if (k === "ArrowLeft") return "left";
+    if (k === "ArrowRight") return "right";
 
-        /*
-         * e.code 사용:
-         * 한글 입력 상태에서도
-         * 물리적인 키 위치를 안정적으로 인식
-         */
+    k = k.toLowerCase();
 
-        switch (e.code) {
+    if (k === "ㅈ") return "w";
+    if (k === "ㄴ") return "s";
+    if (k === "ㅁ") return "a";
+    if (k === "ㅇ") return "d";
+    if (k === "ㄷ") return "e";
+    if (k === "ㄱ") return "r";
 
-            case "KeyW":
-                keys.w = true;
-                break;
+    return k;
+}
 
-            case "KeyA":
-                keys.a = true;
-                break;
+function handleInteract() {
 
-            case "KeyS":
-                keys.s = true;
-                break;
+    if (gameOver) return;
 
-            case "KeyD":
-                keys.d = true;
-                break;
+    const checkDist = 1.2;
 
-            case "KeyE":
-                keys.e = true;
-                break;
+    const targetX =
+        Math.floor(
+            px + Math.cos(angle) * checkDist
+        );
 
-            case "KeyR":
-                keys.r = true;
+    const targetY =
+        Math.floor(
+            py + Math.sin(angle) * checkDist
+        );
 
-                if (!gameOver) {
-                    handleInteract();
-                }
+    if (
+        targetX >= 0 &&
+        targetX < MAP_SIZE &&
+        targetY >= 0 &&
+        targetY < MAP_SIZE
+    ) {
 
-                break;
+        const tile =
+            houseMap[targetY][targetX];
+
+        if (tile === 2) {
+
+            houseMap[targetY][targetX] = 0;
+
+            playSound("door");
+
+            showTmpMsg("🚪 문을 열었습니다.");
+
+            return;
         }
 
+        if (tile === 3) {
 
-        if (
-            e.code === "ArrowLeft"
-        ) {
-            keys.left = true;
-            e.preventDefault();
-        }
+            if (items.key) {
 
-        if (
-            e.code === "ArrowRight"
-        ) {
-            keys.right = true;
-            e.preventDefault();
-        }
+                gameOver = true;
 
-        if (
-            e.code === "ArrowUp" ||
-            e.code === "ArrowDown"
-        ) {
-            e.preventDefault();
-        }
+                playSound("door");
 
+                document.getElementById(
+                    "msg"
+                ).innerText =
+                    "🚪 열쇠로 잠긴 문을 열고 탈출에 성공했습니다!";
 
-        if (e.key === "1" && !gameOver) {
+                document.getElementById(
+                    "msg"
+                ).style.color = "gold";
 
-            if (items.potion > 0) {
-
-                hp =
-                    Math.min(
-                        100,
-                        hp + 60
-                    );
-
-                items.potion--;
-
-                playSound("item");
+            } else {
 
                 showTmpMsg(
-                    "💊 체력을 회복했습니다."
+                    "🔒 문이 굳게 잠겨 있습니다. 피묻은 열쇠가 필요합니다."
                 );
-
-                updateUI();
             }
+
+            return;
         }
-
-
-        if (e.key === "2" && !gameOver) {
-
-            if (items.battery > 0) {
-
-                flashRange = 16;
-
-                items.battery--;
-
-                playSound("item");
-
-                showTmpMsg(
-                    "🔋 손전등 출력이 강화되었습니다."
-                );
-
-                updateUI();
-            }
-        }
-
-
-        if (e.key === "3" && !gameOver) {
-
-            if (items.talisman > 0) {
-
-                ghosts.forEach(
-                    function(g) {
-
-                        g.stun = 200;
-
-                        const dx =
-                            g.x - px;
-
-                        const dy =
-                            g.y - py;
-
-                        g.x += dx * 0.5;
-                        g.y += dy * 0.5;
-                    }
-                );
-
-                items.talisman--;
-
-                playSound("item");
-
-                screenShake = 12;
-
-                showTmpMsg(
-                    "📜 부적으로 주변의 원혼을 퇴마했습니다!"
-                );
-
-                updateUI();
-            }
-        }
-
     }
-);
 
+    let picked = false;
 
-window.addEventListener(
-    "keyup",
-    function(e) {
+    for (let i = worldItems.length - 1; i >= 0; i--) {
 
-        switch (e.code) {
+        const item = worldItems[i];
 
-            case "KeyW":
-                keys.w = false;
-                break;
+        const dx = px - item.x;
+        const dy = py - item.y;
 
-            case "KeyA":
-                keys.a = false;
-                break;
+        const dist = Math.sqrt(
+            dx * dx + dy * dy
+        );
 
-            case "KeyS":
-                keys.s = false;
-                break;
+        if (dist < 1.5 && !picked) {
 
-            case "KeyD":
-                keys.d = false;
-                break;
+            playSound("item");
 
-            case "KeyE":
-                keys.e = false;
-                break;
+            if (item.type === "key") {
+
+                items.key = true;
+
+                showTmpMsg(
+                    "🔑 피묻은 열쇠를 습득했습니다! 탈출문을 찾으세요."
+                );
+
+            } else if (item.type === "knife") {
+
+                items.knife = true;
+
+                showTmpMsg(
+                    "🗡️ 녹슨 단검을 습득했습니다."
+                );
+
+            } else if (item.type === "potion") {
+
+                items.potion++;
+
+                showTmpMsg(
+                    "💊 의용 회복제를 습득했습니다."
+                );
+
+            } else if (item.type === "battery") {
+
+                items.battery++;
+
+                showTmpMsg(
+                    "🔋 배터리를 습득했습니다."
+                );
+            }
+
+            worldItems.splice(i, 1);
+
+            updateUI();
+
+            picked = true;
         }
-
-
-        if (
-            e.code === "ArrowLeft"
-        ) {
-            keys.left = false;
-        }
-
-        if (
-            e.code === "ArrowRight"
-        ) {
-            keys.right = false;
-        }
-
     }
-);
 
+    if (!picked) {
 
-/* =========================================================
-   MOUSE
-========================================================= */
+        showTmpMsg(
+            "상호작용할 대상이 가까이에 없습니다."
+        );
+    }
+}
+
+window.addEventListener("keydown", e => {
+
+    const k = parseKey(e.key);
+
+    keys[k] = true;
+
+    if (
+        [
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            " "
+        ].includes(e.key)
+    ) {
+        e.preventDefault();
+    }
+
+    if (gameOver) return;
+
+    if (k === "r") {
+        handleInteract();
+    }
+
+    if (e.key === "1" && items.potion > 0) {
+
+        hp = Math.min(
+            100,
+            hp + 60
+        );
+
+        items.potion--;
+
+        playSound("item");
+
+        showTmpMsg(
+            "💊 체력을 회복했습니다."
+        );
+
+        updateUI();
+    }
+
+    if (e.key === "2" && items.battery > 0) {
+
+        flashRange = 16;
+
+        items.battery--;
+
+        playSound("item");
+
+        showTmpMsg(
+            "🔋 손전등 출력이 강화되었습니다."
+        );
+
+        updateUI();
+    }
+
+    if (e.key === "3" && items.talisman > 0) {
+
+        ghosts.forEach(g => {
+
+            if (g.hp <= 0) return;
+
+            g.stun = 200;
+
+            g.x +=
+                (g.x - px) * 0.5;
+
+            g.y +=
+                (g.y - py) * 0.5;
+        });
+
+        items.talisman--;
+
+        playSound("item");
+
+        screenShake = 12;
+
+        showTmpMsg(
+            "📜 부적으로 주변의 원혼을 퇴마했습니다!"
+        );
+
+        updateUI();
+    }
+});
+
+window.addEventListener("keyup", e => {
+
+    keys[
+        parseKey(e.key)
+    ] = false;
+});
 
 let isMouseDown = false;
 let lastMouseX = 0;
 
-canvas.addEventListener(
-    "mousedown",
-    function(e) {
+canvas.addEventListener("mousedown", e => {
 
-        initAudio();
+    initAudio();
 
-        canvas.focus();
+    canvas.focus();
 
-        isMouseDown = true;
+    isMouseDown = true;
 
-        lastMouseX = e.clientX;
+    lastMouseX = e.clientX;
 
+    if (
+        items.knife &&
+        isAttacking === 0 &&
+        !gameOver
+    ) {
 
-        if (
-            items.knife &&
-            isAttacking === 0 &&
-            !gameOver
-        ) {
+        isAttacking = 10;
 
-            isAttacking = 10;
+        playSound("attack");
 
-            playSound("attack");
-
-            checkAttackHit();
-        }
-
+        checkAttackHit();
     }
-);
+});
 
+window.addEventListener("mouseup", () => {
 
-window.addEventListener(
-    "mouseup",
-    function() {
-        isMouseDown = false;
-    }
-);
+    isMouseDown = false;
+});
 
+window.addEventListener("mousemove", e => {
 
-window.addEventListener(
-    "mousemove",
-    function(e) {
+    if (!isMouseDown) return;
 
-        if (isMouseDown && !gameOver) {
+    const dx =
+        e.clientX - lastMouseX;
 
-            const dx =
-                e.clientX - lastMouseX;
+    angle += dx * 0.006;
 
-            angle += dx * 0.006;
-
-            lastMouseX =
-                e.clientX;
-        }
-
-    }
-);
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
+    lastMouseX = e.clientX;
+});
 
 function showTmpMsg(txt) {
 
@@ -1404,27 +1193,110 @@ function showTmpMsg(txt) {
 
     msgEl.innerText = txt;
 
-    setTimeout(
-        function() {
+    setTimeout(() => {
 
-            if (
-                !gameOver &&
-                msgEl.innerText === txt
-            ) {
-                msgEl.innerText = "";
-            }
+        if (
+            !gameOver &&
+            msgEl.innerText === txt
+        ) {
+            msgEl.innerText = "";
+        }
 
-        },
-        2500
-    );
+    }, 2500);
 }
 
+function checkAttackHit() {
 
-/* =========================================================
-   COLLISION
-========================================================= */
+    ghosts.forEach(g => {
 
-function isWall(x, y) {
+        if (g.hp <= 0) return;
+
+        const gdx = g.x - px;
+        const gdy = g.y - py;
+
+        const dist = Math.sqrt(
+            gdx * gdx +
+            gdy * gdy
+        );
+
+        let gAngle =
+            Math.atan2(gdy, gdx) -
+            angle;
+
+        while (gAngle < -Math.PI) {
+            gAngle += 2 * Math.PI;
+        }
+
+        while (gAngle > Math.PI) {
+            gAngle -= 2 * Math.PI;
+        }
+
+        if (
+            dist < 2.0 &&
+            Math.abs(gAngle) < 0.7
+        ) {
+
+            g.hp -= 50;
+
+            g.stun = 50;
+
+            playSound("hit");
+
+            screenShake = 8;
+
+            if (g.hp <= 0) {
+
+                showTmpMsg(
+                    "💀 원혼을 성불시켰습니다!"
+                );
+            }
+        }
+    });
+}
+
+function updateUI() {
+
+    document.getElementById(
+        "hp-bar"
+    ).style.width =
+        Math.max(0, hp) + "%";
+
+    document.getElementById(
+        "stamina-bar"
+    ).style.width =
+        Math.max(0, stamina) + "%";
+
+    document.getElementById(
+        "weapon"
+    ).innerText =
+        items.knife
+        ? "녹슨 단검 (클릭: 베기)"
+        : "맨손";
+
+    document.getElementById(
+        "cnt-potion"
+    ).innerText =
+        items.potion;
+
+    document.getElementById(
+        "cnt-battery"
+    ).innerText =
+        items.battery;
+
+    document.getElementById(
+        "cnt-talisman"
+    ).innerText =
+        items.talisman;
+
+    document.getElementById(
+        "cnt-key"
+    ).innerText =
+        items.key
+        ? "획득완료"
+        : "미획득";
+}
+
+function isSolid(x, y) {
 
     if (
         x < 0 ||
@@ -1442,466 +1314,8 @@ function isWall(x, y) {
             Math.floor(x)
         ];
 
-    return (
-        tile === 1 ||
-        tile === 2
-    );
+    return tile === 1 || tile === 2;
 }
-
-
-function isFurnitureCollision(x, y) {
-
-    for (
-        let i = 0;
-        i < furnitureList.length;
-        i++
-    ) {
-
-        const f =
-            furnitureList[i];
-
-        /*
-         * 촛대는 충돌하지 않게 처리
-         */
-        if (
-            f.type === "candelabra"
-        ) {
-            continue;
-        }
-
-        const dx =
-            x - f.x;
-
-        const dy =
-            y - f.y;
-
-        const dist =
-            Math.sqrt(
-                dx * dx +
-                dy * dy
-            );
-
-        if (
-            dist <
-            f.radius + 0.22
-        ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-function isSolid(x, y) {
-
-    return (
-        isWall(x, y) ||
-        isFurnitureCollision(x, y)
-    );
-}
-
-
-/*
- * X/Y를 따로 검사해서
- * 벽 모서리에 끼이는 현상을 줄인다.
- */
-
-function movePlayer(dx, dy) {
-
-    const margin = 0.22;
-
-    const newX =
-        px + dx;
-
-    const newY =
-        py + dy;
-
-
-    if (
-        !isSolid(
-            newX + Math.sign(dx) * margin,
-            py
-        )
-    ) {
-        px = newX;
-    }
-
-
-    if (
-        !isSolid(
-            px,
-            newY + Math.sign(dy) * margin
-        )
-    ) {
-        py = newY;
-    }
-}
-
-
-/* =========================================================
-   INTERACTION
-========================================================= */
-
-function findNearbyDoor() {
-
-    let best = null;
-    let bestDist = 1.45;
-
-    for (
-        let y = 0;
-        y < MAP_SIZE;
-        y++
-    ) {
-
-        for (
-            let x = 0;
-            x < MAP_SIZE;
-            x++
-        ) {
-
-            const tile =
-                houseMap[y][x];
-
-            if (
-                tile !== 2 &&
-                tile !== 3
-            ) {
-                continue;
-            }
-
-            const cx =
-                x + 0.5;
-
-            const cy =
-                y + 0.5;
-
-            const dist =
-                Math.hypot(
-                    px - cx,
-                    py - cy
-                );
-
-            if (
-                dist < bestDist
-            ) {
-
-                bestDist = dist;
-
-                best = {
-                    x: x,
-                    y: y,
-                    tile: tile
-                };
-            }
-        }
-    }
-
-    return best;
-}
-
-
-function findNearbyItem() {
-
-    let bestIndex = -1;
-    let bestDist = 1.5;
-
-    for (
-        let i = 0;
-        i < worldItems.length;
-        i++
-    ) {
-
-        const item =
-            worldItems[i];
-
-        const dist =
-            Math.hypot(
-                px - item.x,
-                py - item.y
-            );
-
-        if (
-            dist < bestDist
-        ) {
-
-            bestDist = dist;
-            bestIndex = i;
-        }
-    }
-
-    return bestIndex;
-}
-
-
-function handleInteract() {
-
-    if (gameOver) {
-        return;
-    }
-
-
-    const door =
-        findNearbyDoor();
-
-
-    if (door) {
-
-        if (door.tile === 2) {
-
-            houseMap[
-                door.y
-            ][
-                door.x
-            ] = 0;
-
-            playSound("door");
-
-            showTmpMsg(
-                "🚪 문을 열었습니다."
-            );
-
-            return;
-        }
-
-
-        if (door.tile === 3) {
-
-            if (items.key) {
-
-                gameWon = true;
-                gameOver = true;
-
-                playSound("door");
-
-                document.getElementById(
-                    "ending"
-                ).style.display = "flex";
-
-            } else {
-
-                showTmpMsg(
-                    "🔒 잠긴 문입니다. 피묻은 열쇠가 필요합니다."
-                );
-            }
-
-            return;
-        }
-    }
-
-
-    const itemIndex =
-        findNearbyItem();
-
-
-    if (itemIndex !== -1) {
-
-        const item =
-            worldItems[itemIndex];
-
-        playSound("item");
-
-
-        if (
-            item.type === "key"
-        ) {
-
-            items.key = true;
-
-            showTmpMsg(
-                "🔑 피묻은 열쇠를 획득했습니다! 탈출문을 찾으세요."
-            );
-        }
-
-
-        else if (
-            item.type === "knife"
-        ) {
-
-            items.knife = true;
-
-            showTmpMsg(
-                "🗡️ 녹슨 단검을 획득했습니다."
-            );
-        }
-
-
-        else if (
-            item.type === "potion"
-        ) {
-
-            items.potion++;
-
-            showTmpMsg(
-                "💊 회복제를 획득했습니다."
-            );
-        }
-
-
-        else if (
-            item.type === "battery"
-        ) {
-
-            items.battery++;
-
-            showTmpMsg(
-                "🔋 배터리를 획득했습니다."
-            );
-        }
-
-
-        worldItems.splice(
-            itemIndex,
-            1
-        );
-
-        updateUI();
-
-        return;
-    }
-
-
-    showTmpMsg(
-        "상호작용할 대상이 가까이에 없습니다."
-    );
-}
-
-
-/* =========================================================
-   ATTACK
-========================================================= */
-
-function checkAttackHit() {
-
-    ghosts.forEach(
-        function(g) {
-
-            if (g.hp <= 0) {
-                return;
-            }
-
-
-            const gdx =
-                g.x - px;
-
-            const gdy =
-                g.y - py;
-
-            const dist =
-                Math.sqrt(
-                    gdx * gdx +
-                    gdy * gdy
-                );
-
-
-            let gAngle =
-                Math.atan2(
-                    gdy,
-                    gdx
-                ) - angle;
-
-
-            while (
-                gAngle < -Math.PI
-            ) {
-                gAngle +=
-                    2 * Math.PI;
-            }
-
-
-            while (
-                gAngle > Math.PI
-            ) {
-                gAngle -=
-                    2 * Math.PI;
-            }
-
-
-            if (
-                dist < 2.0 &&
-                Math.abs(gAngle) < 0.7
-            ) {
-
-                g.hp -= 50;
-
-                g.stun = 50;
-
-                playSound("hit");
-
-                screenShake = 8;
-
-
-                if (
-                    g.hp <= 0
-                ) {
-
-                    showTmpMsg(
-                        "💀 원혼을 성불시켰습니다!"
-                    );
-                }
-            }
-
-        }
-    );
-}
-
-
-/* =========================================================
-   UI
-========================================================= */
-
-function updateUI() {
-
-    document.getElementById(
-        "hp-bar"
-    ).style.width =
-        Math.max(0, hp) + "%";
-
-
-    document.getElementById(
-        "stamina-bar"
-    ).style.width =
-        Math.max(0, stamina) + "%";
-
-
-    document.getElementById(
-        "weapon"
-    ).innerText =
-        items.knife
-            ? "녹슨 단검 (클릭: 베기)"
-            : "맨손";
-
-
-    document.getElementById(
-        "cnt-potion"
-    ).innerText =
-        items.potion;
-
-
-    document.getElementById(
-        "cnt-battery"
-    ).innerText =
-        items.battery;
-
-
-    document.getElementById(
-        "cnt-talisman"
-    ).innerText =
-        items.talisman;
-
-
-    document.getElementById(
-        "cnt-key"
-    ).innerText =
-        items.key
-            ? "획득완료"
-            : "미획득";
-}
-
-
-/* =========================================================
-   JUMPSCARE
-========================================================= */
 
 function triggerJumpscare() {
 
@@ -1914,275 +1328,165 @@ function triggerJumpscare() {
     ).style.display = "flex";
 }
 
-
-/* =========================================================
-   ROOM NAME
-========================================================= */
-
-function updateRoomName() {
-
-    const curX =
-        Math.floor(px);
-
-    const curY =
-        Math.floor(py);
-
-    let roomTxt =
-        "중앙 복도";
-
-
-    if (
-        curX < 4 &&
-        curY < 4
-    ) {
-
-        roomTxt =
-            "북서쪽 서재";
-    }
-
-    else if (
-        curX > 16 &&
-        curY < 4
-    ) {
-
-        roomTxt =
-            "북동쪽 응급실";
-    }
-
-    else if (
-        curX < 4 &&
-        curY > 16
-    ) {
-
-        roomTxt =
-            "남서쪽 침실";
-    }
-
-    else if (
-        curX > 16 &&
-        curY > 16
-    ) {
-
-        roomTxt =
-            "남동쪽 지하 밀실";
-    }
-
-
-    document.getElementById(
-        "current-room-name"
-    ).innerText =
-        "현재 위치: " + roomTxt;
-}
-
-
-/* =========================================================
-   GAME UPDATE
-========================================================= */
-
 function update() {
 
-    if (gameOver) {
-        return;
-    }
-
+    if (gameOver) return;
 
     animTimer += 0.05;
 
-
-    if (
-        screenShake > 0
-    ) {
+    if (screenShake > 0) {
         screenShake--;
     }
 
-
-    /*
-     * 회전
-     */
-
-    if (keys.left) {
+    if (keys["left"]) {
         angle -= 0.045;
     }
 
-    if (keys.right) {
+    if (keys["right"]) {
         angle += 0.045;
     }
 
-
-    /*
-     * 이동 속도
-     */
-
     let speed =
-        0.038;
+        keys["e"] && stamina >= 0.5
+        ? 0.065
+        : 0.038;
 
+    const moving =
+        keys["w"] ||
+        keys["s"] ||
+        keys["a"] ||
+        keys["d"];
 
     if (
-        keys.e &&
-        stamina > 0
+        keys["e"] &&
+        moving
     ) {
-
-        speed =
-            0.068;
-
         stamina =
             Math.max(
                 0,
-                stamina - 0.5
+                stamina - 0.4
             );
-
     } else {
 
         stamina =
             Math.min(
                 100,
-                stamina + 0.22
+                stamina + 0.2
             );
     }
 
+    let dx = 0;
+    let dy = 0;
 
-    /*
-     * 전후 이동
-     */
-
-    let forward =
-        0;
-
-    if (keys.w) {
-        forward += 1;
-    }
-
-    if (keys.s) {
-        forward -= 1;
-    }
-
-
-    /*
-     * 좌우 이동
-     */
-
-    let strafe =
-        0;
-
-    if (keys.d) {
-        strafe += 1;
-    }
-
-    if (keys.a) {
-        strafe -= 1;
-    }
-
-
-    if (
-        forward !== 0 ||
-        strafe !== 0
-    ) {
-
-        let dx =
-            Math.cos(angle) *
-            forward *
-            speed;
-
-        let dy =
-            Math.sin(angle) *
-            forward *
-            speed;
-
+    if (keys["w"]) {
 
         dx +=
-            Math.cos(
-                angle + Math.PI / 2
-            ) *
-            strafe *
-            speed;
-
+            Math.cos(angle) * speed;
 
         dy +=
-            Math.sin(
-                angle + Math.PI / 2
-            ) *
-            strafe *
-            speed;
-
-
-        movePlayer(
-            dx,
-            dy
-        );
+            Math.sin(angle) * speed;
     }
 
+    if (keys["s"]) {
 
-    updateRoomName();
+        dx -=
+            Math.cos(angle) * speed;
 
+        dy -=
+            Math.sin(angle) * speed;
+    }
 
-    /*
-     * 유령 AI
-     */
+    const margin = 0.25;
 
-    let minDist =
-        999;
+    if (
+        !isSolid(
+            px + dx +
+            Math.sign(dx) * margin,
+            py
+        )
+    ) {
+        px += dx;
+    }
 
+    if (
+        !isSolid(
+            px,
+            py + dy +
+            Math.sign(dy) * margin
+        )
+    ) {
+        py += dy;
+    }
 
-    ghosts.forEach(
-        function(g) {
+    const curX = Math.floor(px);
+    const curY = Math.floor(py);
 
-            if (g.hp <= 0) {
-                return;
-            }
+    let roomTxt = "중앙 복도";
 
+    if (
+        curX < 4 &&
+        curY < 4
+    ) {
+        roomTxt =
+            "북서쪽 서재 (단검 위치)";
+    } else if (
+        curX > 16 &&
+        curY < 4
+    ) {
+        roomTxt =
+            "북동쪽 응급실 (회복제 위치)";
+    } else if (
+        curX < 4 &&
+        curY > 16
+    ) {
+        roomTxt =
+            "남서쪽 침실";
+    } else if (
+        curX > 16 &&
+        curY > 16
+    ) {
+        roomTxt =
+            "남동쪽 지하 밀실 (열쇠 위치)";
+    }
 
-            const gdx =
-                px - g.x;
+    document.getElementById(
+        "current-room-name"
+    ).innerText =
+        "현재 위치: " + roomTxt;
 
-            const gdy =
-                py - g.y;
+    let minDist = 999;
 
+    ghosts.forEach(g => {
 
-            const dist =
-                Math.sqrt(
-                    gdx * gdx +
-                    gdy * gdy
-                );
+        if (g.hp <= 0) return;
 
+        const gdx = px - g.x;
+        const gdy = py - g.y;
 
-            minDist =
-                Math.min(
-                    minDist,
-                    dist
-                );
+        const dist = Math.sqrt(
+            gdx * gdx +
+            gdy * gdy
+        );
 
+        minDist =
+            Math.min(
+                minDist,
+                dist
+            );
 
-            if (g.stun > 0) {
+        if (g.stun > 0) {
 
-                g.stun--;
+            g.stun--;
 
-                return;
-            }
+        } else {
 
-
-            /*
-             * 플레이어와 가까울수록
-             * 유령이 조금 빨라짐
-             */
-
-            let ghostSpeed =
-                dist < 5
-                    ? 0.024
-                    : 0.016;
-
-
-            if (
-                dist > 0.1
-            ) {
+            if (dist > 0.1) {
 
                 const moveX =
-                    (gdx / dist) *
-                    ghostSpeed;
+                    (gdx / dist) * 0.018;
 
                 const moveY =
-                    (gdy / dist) *
-                    ghostSpeed;
-
+                    (gdy / dist) * 0.018;
 
                 if (
                     !isSolid(
@@ -2190,10 +1494,8 @@ function update() {
                         g.y
                     )
                 ) {
-
                     g.x += moveX;
                 }
-
 
                 if (
                     !isSolid(
@@ -2201,54 +1503,29 @@ function update() {
                         g.y + moveY
                     )
                 ) {
-
                     g.y += moveY;
                 }
             }
 
+            if (dist < 0.6) {
 
-            /*
-             * 공격 쿨다운 대신
-             * 근접 상태에서 지속 피해
-             */
-
-            if (
-                dist < 0.6
-            ) {
-
-                hp -= 1.5;
+                hp -= 2.0;
 
                 screenShake = 5;
 
-
-                if (
-                    hp <= 0
-                ) {
-
-                    hp = 0;
-
+                if (hp <= 0) {
                     triggerJumpscare();
                 }
             }
-
         }
-    );
+    });
 
-
-    /*
-     * 유령 접근 시 글리치
-     */
-
-    if (
-        minDist < 5.5
-    ) {
+    if (minDist < 5.5) {
 
         document.getElementById(
             "glitch-overlay"
         ).style.opacity =
-            (
-                5.5 - minDist
-            ) /
+            (5.5 - minDist) /
             5.5 *
             0.75;
 
@@ -2259,21 +1536,12 @@ function update() {
         ).style.opacity = 0;
     }
 
-
-    if (
-        isAttacking > 0
-    ) {
+    if (isAttacking > 0) {
         isAttacking--;
     }
 
-
     updateUI();
 }
-
-
-/* =========================================================
-   ITEM DRAWING
-========================================================= */
 
 function draw3DItem(
     type,
@@ -2284,32 +1552,39 @@ function draw3DItem(
 
     ctx.save();
 
-    ctx.translate(
-        sx,
-        sy
-    );
-
+    ctx.translate(sx, sy);
 
     if (type === "key") {
 
-        ctx.fillStyle =
-            "#ffd700";
+        ctx.fillStyle = "#b38f00";
 
         ctx.beginPath();
 
         ctx.arc(
-            0,
-            -size / 3,
-            size / 3,
+            3,
+            -size / 3 + 3,
+            size / 3.2,
             0,
             Math.PI * 2
         );
 
         ctx.fill();
 
+        ctx.fillStyle = "#ffd700";
 
-        ctx.fillStyle =
-            "#111";
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            -size / 3,
+            size / 3.2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle = "#1a1100";
 
         ctx.beginPath();
 
@@ -2323,9 +1598,7 @@ function draw3DItem(
 
         ctx.fill();
 
-
-        ctx.fillStyle =
-            "#ffd700";
+        ctx.fillStyle = "#ffd700";
 
         ctx.fillRect(
             -size / 12,
@@ -2348,13 +1621,9 @@ function draw3DItem(
             size / 8
         );
 
-    }
+    } else if (type === "knife") {
 
-
-    else if (type === "knife") {
-
-        ctx.fillStyle =
-            "#888";
+        ctx.fillStyle = "#888";
 
         ctx.beginPath();
 
@@ -2377,9 +1646,30 @@ function draw3DItem(
 
         ctx.fill();
 
+        ctx.fillStyle = "#fff";
 
-        ctx.fillStyle =
-            "#4a2511";
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            -size / 1.5
+        );
+
+        ctx.lineTo(
+            0,
+            size / 6
+        );
+
+        ctx.lineTo(
+            -size / 6,
+            size / 6
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle = "#4a2511";
 
         ctx.fillRect(
             -size / 4,
@@ -2388,8 +1678,7 @@ function draw3DItem(
             size / 10
         );
 
-        ctx.fillStyle =
-            "#2b1408";
+        ctx.fillStyle = "#2b1408";
 
         ctx.fillRect(
             -size / 8,
@@ -2397,13 +1686,11 @@ function draw3DItem(
             size / 4,
             size / 2.5
         );
-    }
 
-
-    else if (type === "potion") {
+    } else if (type === "potion") {
 
         ctx.fillStyle =
-            "#ff1133";
+            "rgba(200,200,255,0.4)";
 
         ctx.beginPath();
 
@@ -2417,9 +1704,36 @@ function draw3DItem(
 
         ctx.fill();
 
+        ctx.fillStyle = "#ff1133";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            size / 4,
+            size / 2.6,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
 
         ctx.fillStyle =
-            "#8b5a2b";
+            "rgba(255,255,255,0.6)";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -size / 6,
+            size / 6,
+            size / 8,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle = "#8b5a2b";
 
         ctx.fillRect(
             -size / 6,
@@ -2427,13 +1741,10 @@ function draw3DItem(
             size / 3,
             size / 6
         );
-    }
 
+    } else if (type === "battery") {
 
-    else if (type === "battery") {
-
-        ctx.fillStyle =
-            "#222";
+        ctx.fillStyle = "#222";
 
         ctx.fillRect(
             -size / 3,
@@ -2442,8 +1753,7 @@ function draw3DItem(
             size / 1.2
         );
 
-        ctx.fillStyle =
-            "#ff6600";
+        ctx.fillStyle = "#ff6600";
 
         ctx.fillRect(
             -size / 3,
@@ -2452,8 +1762,16 @@ function draw3DItem(
             size / 2.4
         );
 
-        ctx.fillStyle =
-            "#fff";
+        ctx.fillStyle = "#aaa";
+
+        ctx.fillRect(
+            -size / 8,
+            -size / 2,
+            size / 4,
+            size / 6
+        );
+
+        ctx.fillStyle = "#fff";
 
         ctx.font =
             `bold ${Math.max(
@@ -2461,8 +1779,8 @@ function draw3DItem(
                 Math.floor(size / 3)
             )}px sans-serif`;
 
-        ctx.textAlign =
-            "center";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
 
         ctx.fillText(
             "⚡",
@@ -2471,14 +1789,8 @@ function draw3DItem(
         );
     }
 
-
     ctx.restore();
 }
-
-
-/* =========================================================
-   FURNITURE
-========================================================= */
 
 function drawFurniture(
     type,
@@ -2489,18 +1801,11 @@ function drawFurniture(
 
     ctx.save();
 
-    ctx.translate(
-        sx,
-        sy
-    );
+    ctx.translate(sx, sy);
 
+    if (type === "bookshelf") {
 
-    if (
-        type === "bookshelf"
-    ) {
-
-        ctx.fillStyle =
-            "#3a200d";
+        ctx.fillStyle = "#3a200d";
 
         ctx.fillRect(
             -size / 2,
@@ -2509,8 +1814,7 @@ function drawFurniture(
             size * 1.2
         );
 
-        ctx.fillStyle =
-            "#1e0f06";
+        ctx.fillStyle = "#1e0f06";
 
         ctx.fillRect(
             -size / 2.3,
@@ -2519,15 +1823,52 @@ function drawFurniture(
             size * 1.1
         );
 
-    }
+        ctx.fillStyle = "#4a2c16";
 
+        ctx.fillRect(
+            -size / 2.3,
+            -size / 2,
+            size / 1.15,
+            size / 12
+        );
 
-    else if (
-        type === "desk"
-    ) {
+        ctx.fillRect(
+            -size / 2.3,
+            0,
+            size / 1.15,
+            size / 12
+        );
 
-        ctx.fillStyle =
-            "#422817";
+        ctx.fillStyle = "#aa2222";
+
+        ctx.fillRect(
+            -size / 2.6,
+            -size / 1.25,
+            size / 8,
+            size / 3
+        );
+
+        ctx.fillStyle = "#2288aa";
+
+        ctx.fillRect(
+            -size / 4,
+            -size / 1.25,
+            size / 7,
+            size / 3.2
+        );
+
+        ctx.fillStyle = "#ccaa22";
+
+        ctx.fillRect(
+            0,
+            -size / 2.3,
+            size / 6,
+            size / 3
+        );
+
+    } else if (type === "desk") {
+
+        ctx.fillStyle = "#422817";
 
         ctx.fillRect(
             -size / 1.3,
@@ -2535,6 +1876,8 @@ function drawFurniture(
             size * 1.5,
             size / 6
         );
+
+        ctx.fillStyle = "#2b180d";
 
         ctx.fillRect(
             -size / 1.4,
@@ -2550,15 +1893,9 @@ function drawFurniture(
             size / 1.5
         );
 
-    }
+    } else if (type === "chair") {
 
-
-    else if (
-        type === "chair"
-    ) {
-
-        ctx.fillStyle =
-            "#3a200d";
+        ctx.fillStyle = "#3a200d";
 
         ctx.fillRect(
             -size / 4,
@@ -2567,6 +1904,8 @@ function drawFurniture(
             size / 1.8
         );
 
+        ctx.fillStyle = "#543118";
+
         ctx.fillRect(
             -size / 3,
             -size / 3,
@@ -2574,15 +1913,25 @@ function drawFurniture(
             size / 8
         );
 
-    }
+        ctx.fillStyle = "#221207";
 
+        ctx.fillRect(
+            -size / 3,
+            -size / 4,
+            size / 10,
+            size / 2
+        );
 
-    else if (
-        type === "bed"
-    ) {
+        ctx.fillRect(
+            size / 3 - size / 10,
+            -size / 4,
+            size / 10,
+            size / 2
+        );
 
-        ctx.fillStyle =
-            "#4a2e1b";
+    } else if (type === "bed") {
+
+        ctx.fillStyle = "#4a2e1b";
 
         ctx.fillRect(
             -size / 1.2,
@@ -2591,8 +1940,7 @@ function drawFurniture(
             size / 2
         );
 
-        ctx.fillStyle =
-            "#aaa";
+        ctx.fillStyle = "#aaa";
 
         ctx.fillRect(
             -size / 1.1,
@@ -2601,15 +1949,18 @@ function drawFurniture(
             size / 4
         );
 
-    }
+        ctx.fillStyle = "#e6e6e6";
 
+        ctx.fillRect(
+            -size / 1.1,
+            -size / 3,
+            size / 2.5,
+            size / 5
+        );
 
-    else if (
-        type === "cabinet"
-    ) {
+    } else if (type === "cabinet") {
 
-        ctx.fillStyle =
-            "#333b42";
+        ctx.fillStyle = "#333b42";
 
         ctx.fillRect(
             -size / 3,
@@ -2618,15 +1969,27 @@ function drawFurniture(
             size * 1.1
         );
 
-    }
+        ctx.fillStyle = "#1e2327";
 
+        ctx.fillRect(
+            -size / 3.5,
+            -size / 1.15,
+            size / 1.8,
+            size / 12
+        );
 
-    else if (
-        type === "clock"
-    ) {
+        ctx.fillStyle = "#666";
 
-        ctx.fillStyle =
-            "#2d1a0e";
+        ctx.fillRect(
+            0,
+            -size / 2,
+            size / 12,
+            size / 8
+        );
+
+    } else if (type === "clock") {
+
+        ctx.fillStyle = "#2d1a0e";
 
         ctx.fillRect(
             -size / 4,
@@ -2635,8 +1998,7 @@ function drawFurniture(
             size * 1.3
         );
 
-        ctx.fillStyle =
-            "#ffeecc";
+        ctx.fillStyle = "#ffeecc";
 
         ctx.beginPath();
 
@@ -2650,15 +2012,23 @@ function drawFurniture(
 
         ctx.fill();
 
-    }
+        ctx.fillStyle = "#ffaa00";
 
+        ctx.beginPath();
 
-    else if (
-        type === "candelabra"
-    ) {
+        ctx.arc(
+            0,
+            -size / 3,
+            size / 12,
+            0,
+            Math.PI * 2
+        );
 
-        ctx.fillStyle =
-            "#887711";
+        ctx.fill();
+
+    } else if (type === "candelabra") {
+
+        ctx.fillStyle = "#887711";
 
         ctx.fillRect(
             -size / 16,
@@ -2667,8 +2037,7 @@ function drawFurniture(
             size / 1.2
         );
 
-        ctx.fillStyle =
-            "#ffaa00";
+        ctx.fillStyle = "#ffaa00";
 
         ctx.beginPath();
 
@@ -2682,13 +2051,10 @@ function drawFurniture(
 
         ctx.fill();
 
-        const flicker =
-            Math.sin(
-                animTimer * 10
-            ) * 2;
+        ctx.fillStyle = "#ffff66";
 
-        ctx.fillStyle =
-            "#ffff66";
+        const flicker =
+            Math.sin(animTimer * 10) * 2;
 
         ctx.beginPath();
 
@@ -2703,14 +2069,8 @@ function drawFurniture(
         ctx.fill();
     }
 
-
     ctx.restore();
 }
-
-
-/* =========================================================
-   GHOST
-========================================================= */
 
 function drawGhost(
     sx,
@@ -2721,21 +2081,13 @@ function drawGhost(
 
     ctx.save();
 
-    ctx.translate(
-        sx,
-        sy
-    );
-
+    ctx.translate(sx, sy);
 
     const alpha =
-        stun > 0
-            ? 0.4
-            : 0.85;
-
+        stun > 0 ? 0.4 : 0.85;
 
     ctx.fillStyle =
         `rgba(200,220,255,${alpha})`;
-
 
     ctx.beginPath();
 
@@ -2744,7 +2096,8 @@ function drawGhost(
         -size / 2,
         size / 3,
         Math.PI,
-        0
+        0,
+        false
     );
 
     ctx.lineTo(
@@ -2761,12 +2114,10 @@ function drawGhost(
 
     ctx.fill();
 
-
     ctx.fillStyle =
         stun > 0
-            ? "#00ffff"
-            : "#ff0000";
-
+        ? "#00ffff"
+        : "#ff0000";
 
     ctx.beginPath();
 
@@ -2780,7 +2131,6 @@ function drawGhost(
 
     ctx.fill();
 
-
     ctx.beginPath();
 
     ctx.arc(
@@ -2793,57 +2143,41 @@ function drawGhost(
 
     ctx.fill();
 
-
     ctx.restore();
 }
 
-
-/* =========================================================
-   WEAPON
-========================================================= */
-
 function drawWeapon() {
 
-    if (!items.knife) {
-        return;
-    }
-
+    if (!items.knife) return;
 
     ctx.save();
 
-
     const swingOffset =
         isAttacking > 0
-            ? (10 - isAttacking) * 8
-            : 0;
-
+        ? (10 - isAttacking) * 8
+        : 0;
 
     const weaponX =
         canvas.width -
         150 -
         swingOffset;
 
-
     const weaponY =
         canvas.height -
         100 +
         swingOffset;
-
 
     ctx.translate(
         weaponX,
         weaponY
     );
 
-
     ctx.rotate(
         -Math.PI / 4 +
         swingOffset * 0.05
     );
 
-
-    ctx.fillStyle =
-        "#aaa";
+    ctx.fillStyle = "#aaa";
 
     ctx.fillRect(
         -10,
@@ -2852,9 +2186,7 @@ function drawWeapon() {
         100
     );
 
-
-    ctx.fillStyle =
-        "#fff";
+    ctx.fillStyle = "#fff";
 
     ctx.fillRect(
         0,
@@ -2863,9 +2195,7 @@ function drawWeapon() {
         100
     );
 
-
-    ctx.fillStyle =
-        "#4a2511";
+    ctx.fillStyle = "#4a2511";
 
     ctx.fillRect(
         -20,
@@ -2874,9 +2204,7 @@ function drawWeapon() {
         10
     );
 
-
-    ctx.fillStyle =
-        "#2b1408";
+    ctx.fillStyle = "#2b1408";
 
     ctx.fillRect(
         -8,
@@ -2885,23 +2213,14 @@ function drawWeapon() {
         40
     );
 
-
     ctx.restore();
 }
-
-
-/* =========================================================
-   RENDER
-========================================================= */
 
 function render() {
 
     ctx.save();
 
-
-    if (
-        screenShake > 0
-    ) {
+    if (screenShake > 0) {
 
         ctx.translate(
             (Math.random() - 0.5) *
@@ -2911,11 +2230,6 @@ function render() {
                 screenShake
         );
     }
-
-
-    /*
-     * 천장
-     */
 
     const ceilGrd =
         ctx.createLinearGradient(
@@ -2935,8 +2249,7 @@ function render() {
         "#221515"
     );
 
-    ctx.fillStyle =
-        ceilGrd;
+    ctx.fillStyle = ceilGrd;
 
     ctx.fillRect(
         0,
@@ -2944,11 +2257,6 @@ function render() {
         canvas.width,
         canvas.height / 2
     );
-
-
-    /*
-     * 바닥
-     */
 
     const floorGrd =
         ctx.createLinearGradient(
@@ -2968,8 +2276,7 @@ function render() {
         "#050505"
     );
 
-    ctx.fillStyle =
-        floorGrd;
+    ctx.fillStyle = floorGrd;
 
     ctx.fillRect(
         0,
@@ -2978,28 +2285,19 @@ function render() {
         canvas.height / 2
     );
 
-
     const numRays = 160;
 
     const w =
-        canvas.width /
-        numRays;
-
+        canvas.width / numRays;
 
     const curFlashRange =
         flashRange +
         (Math.random() - 0.5) *
         0.2;
 
-
     const projDist =
         (canvas.width / 2) /
         Math.tan(fov / 2);
-
-
-    /*
-     * 레이캐스팅
-     */
 
     for (
         let i = 0;
@@ -3012,44 +2310,30 @@ function render() {
             fov / 2 +
             (i / numRays) * fov;
 
-
         let distance = 0;
-
         let hit = false;
-
         let hitType = 1;
-
         let wallX = 0;
-
 
         while (
             !hit &&
-            distance <
-            curFlashRange
+            distance < curFlashRange
         ) {
 
             distance += 0.025;
-
 
             const rx =
                 px +
                 Math.cos(rayAngle) *
                 distance;
 
-
             const ry =
                 py +
                 Math.sin(rayAngle) *
                 distance;
 
-
-            const tx =
-                Math.floor(rx);
-
-
-            const ty =
-                Math.floor(ry);
-
+            const tx = Math.floor(rx);
+            const ty = Math.floor(ry);
 
             if (
                 tx < 0 ||
@@ -3059,12 +2343,9 @@ function render() {
             ) {
 
                 hit = true;
-
                 hitType = 1;
 
-            }
-
-            else if (
+            } else if (
                 houseMap[ty][tx] > 0
             ) {
 
@@ -3073,21 +2354,16 @@ function render() {
                 hitType =
                     houseMap[ty][tx];
 
+                wallX =
+                    (rx - tx) +
+                    (ry - ty);
 
                 wallX =
-                    (
-                        rx - tx +
-                        ry - ty
-                    );
-
-                wallX =
-                    (
-                        wallX -
-                        Math.floor(wallX)
-                    ) * 64;
+                    (wallX -
+                        Math.floor(wallX)) *
+                    64;
             }
         }
-
 
         const correctedDist =
             distance *
@@ -3095,10 +2371,8 @@ function render() {
                 rayAngle - angle
             );
 
-
         zBuffer[i] =
             correctedDist;
-
 
         const h =
             Math.min(
@@ -3106,7 +2380,6 @@ function render() {
                 projDist /
                 (correctedDist + 0.0001)
             );
-
 
         const shade =
             Math.max(
@@ -3116,10 +2389,7 @@ function render() {
                 curFlashRange
             );
 
-
-        if (
-            hitType === 3
-        ) {
+        if (hitType === 3) {
 
             ctx.fillStyle =
                 `rgba(230,190,60,${shade})`;
@@ -3131,11 +2401,7 @@ function render() {
                 h
             );
 
-        }
-
-        else if (
-            hitType === 2
-        ) {
+        } else if (hitType === 2) {
 
             ctx.drawImage(
                 doorTex,
@@ -3150,7 +2416,7 @@ function render() {
             );
 
             ctx.fillStyle =
-                `rgba(0,0,0,${1-shade})`;
+                `rgba(0,0,0,${1 - shade})`;
 
             ctx.fillRect(
                 i * w,
@@ -3159,9 +2425,7 @@ function render() {
                 h
             );
 
-        }
-
-        else {
+        } else {
 
             ctx.drawImage(
                 wallTex,
@@ -3176,7 +2440,7 @@ function render() {
             );
 
             ctx.fillStyle =
-                `rgba(0,0,0,${1-shade})`;
+                `rgba(0,0,0,${1 - shade})`;
 
             ctx.fillRect(
                 i * w,
@@ -3187,355 +2451,278 @@ function render() {
         }
     }
 
+    furnitureList.forEach(furn => {
 
-    /*
-     * 가구
-     */
+        const idxX =
+            furn.x - px;
 
-    furnitureList.forEach(
-        function(furn) {
+        const idxY =
+            furn.y - py;
 
-            const idxX =
-                furn.x - px;
+        const dist =
+            Math.sqrt(
+                idxX * idxX +
+                idxY * idxY
+            );
 
-            const idxY =
-                furn.y - py;
+        let fAngle =
+            Math.atan2(
+                idxY,
+                idxX
+            ) - angle;
 
+        while (fAngle < -Math.PI) {
+            fAngle += 2 * Math.PI;
+        }
 
-            const dist =
-                Math.sqrt(
-                    idxX * idxX +
-                    idxY * idxY
+        while (fAngle > Math.PI) {
+            fAngle -= 2 * Math.PI;
+        }
+
+        if (
+            Math.abs(fAngle) <
+                fov / 1.8 &&
+            dist < curFlashRange
+        ) {
+
+            const sx =
+                canvas.width / 2 +
+                Math.tan(fAngle) *
+                projDist;
+
+            const rayIndex =
+                Math.floor(
+                    sx /
+                    canvas.width *
+                    numRays
                 );
 
-
-            let fAngle =
-                Math.atan2(
-                    idxY,
-                    idxX
-                ) - angle;
-
-
-            while (
-                fAngle < -Math.PI
-            ) {
-                fAngle +=
-                    2 * Math.PI;
-            }
-
-
-            while (
-                fAngle > Math.PI
-            ) {
-                fAngle -=
-                    2 * Math.PI;
-            }
-
-
             if (
-                Math.abs(fAngle) <
-                    fov / 1.8 &&
-                dist <
-                    curFlashRange
+                rayIndex >= 0 &&
+                rayIndex < numRays &&
+                dist < zBuffer[rayIndex]
             ) {
 
-                const sx =
-                    canvas.width / 2 +
-                    Math.tan(fAngle) *
-                    projDist;
-
-
-                const rayIndex =
-                    Math.floor(
-                        sx /
-                        canvas.width *
-                        numRays
+                const size =
+                    Math.min(
+                        180,
+                        projDist *
+                        0.55 /
+                        dist
                     );
 
+                const centerY =
+                    canvas.height / 2 +
+                    size / 2;
 
-                if (
-                    rayIndex >= 0 &&
-                    rayIndex < numRays &&
-                    dist <
-                        zBuffer[rayIndex]
-                ) {
-
-                    const size =
-                        Math.min(
-                            180,
-                            projDist *
-                            0.55 /
-                            dist
-                        );
-
-
-                    const centerY =
-                        canvas.height / 2 +
-                        size / 2;
-
-
-                    drawFurniture(
-                        furn.type,
-                        sx,
-                        centerY,
-                        size
-                    );
-                }
+                drawFurniture(
+                    furn.type,
+                    sx,
+                    centerY,
+                    size
+                );
             }
         }
-    );
+    });
 
+    worldItems.forEach(item => {
 
-    /*
-     * 아이템
-     */
+        const idxX =
+            item.x - px;
 
-    worldItems.forEach(
-        function(item) {
+        const idxY =
+            item.y - py;
 
-            const idxX =
-                item.x - px;
+        const dist =
+            Math.sqrt(
+                idxX * idxX +
+                idxY * idxY
+            );
 
-            const idxY =
-                item.y - py;
+        let itemAngle =
+            Math.atan2(
+                idxY,
+                idxX
+            ) - angle;
 
+        while (
+            itemAngle < -Math.PI
+        ) {
+            itemAngle += 2 * Math.PI;
+        }
 
-            const dist =
-                Math.sqrt(
-                    idxX * idxX +
-                    idxY * idxY
+        while (
+            itemAngle > Math.PI
+        ) {
+            itemAngle -= 2 * Math.PI;
+        }
+
+        if (
+            Math.abs(itemAngle) <
+                fov / 1.8 &&
+            dist < curFlashRange
+        ) {
+
+            const sx =
+                canvas.width / 2 +
+                Math.tan(itemAngle) *
+                projDist;
+
+            const rayIndex =
+                Math.floor(
+                    sx /
+                    canvas.width *
+                    numRays
                 );
 
-
-            let itemAngle =
-                Math.atan2(
-                    idxY,
-                    idxX
-                ) - angle;
-
-
-            while (
-                itemAngle < -Math.PI
-            ) {
-                itemAngle +=
-                    2 * Math.PI;
-            }
-
-
-            while (
-                itemAngle > Math.PI
-            ) {
-                itemAngle -=
-                    2 * Math.PI;
-            }
-
-
             if (
-                Math.abs(itemAngle) <
-                    fov / 1.8 &&
-                dist <
-                    curFlashRange
+                rayIndex >= 0 &&
+                rayIndex < numRays &&
+                dist < zBuffer[rayIndex]
             ) {
 
-                const sx =
-                    canvas.width / 2 +
-                    Math.tan(itemAngle) *
-                    projDist;
-
-
-                const rayIndex =
-                    Math.floor(
-                        sx /
-                        canvas.width *
-                        numRays
+                const size =
+                    Math.min(
+                        120,
+                        projDist *
+                        0.45 /
+                        dist
                     );
 
+                const floatY =
+                    Math.sin(
+                        animTimer * 2.5
+                    ) * 5;
 
-                if (
-                    rayIndex >= 0 &&
-                    rayIndex < numRays &&
-                    dist <
-                        zBuffer[rayIndex]
-                ) {
+                const centerY =
+                    canvas.height / 2 +
+                    size / 3 +
+                    floatY;
 
-                    const size =
-                        Math.min(
-                            120,
-                            projDist *
-                            0.45 /
-                            dist
-                        );
-
-
-                    const floatY =
-                        Math.sin(
-                            animTimer * 2.5
-                        ) * 5;
-
-
-                    const centerY =
-                        canvas.height / 2 +
-                        size / 3 +
-                        floatY;
-
-
-                    draw3DItem(
-                        item.type,
-                        sx,
-                        centerY,
-                        size
-                    );
-
-
-                    ctx.save();
-
-                    ctx.fillStyle =
-                        "#fff";
-
-                    ctx.font =
-                        `bold ${Math.max(
-                            11,
-                            Math.floor(size / 2.2)
-                        )}px sans-serif`;
-
-                    ctx.textAlign =
-                        "center";
-
-                    ctx.shadowColor =
-                        "#000";
-
-                    ctx.shadowBlur = 6;
-
-                    ctx.fillText(
-                        item.name +
-                        " [R]",
-                        sx,
-                        centerY -
-                        size / 1.2
-                    );
-
-                    ctx.restore();
-                }
-            }
-        }
-    );
-
-
-    /*
-     * 유령
-     */
-
-    ghosts.forEach(
-        function(g) {
-
-            if (
-                g.hp <= 0
-            ) {
-                return;
-            }
-
-
-            const gdx =
-                g.x - px;
-
-            const gdy =
-                g.y - py;
-
-
-            const gDist =
-                Math.sqrt(
-                    gdx * gdx +
-                    gdy * gdy
+                draw3DItem(
+                    item.type,
+                    sx,
+                    centerY,
+                    size
                 );
 
+                ctx.save();
 
-            let gAngle =
-                Math.atan2(
-                    gdy,
-                    gdx
-                ) - angle;
+                ctx.fillStyle = "#fff";
 
+                ctx.font =
+                    `bold ${Math.max(
+                        11,
+                        Math.floor(
+                            size / 2.2
+                        )
+                    )}px sans-serif`;
 
-            while (
-                gAngle < -Math.PI
-            ) {
-                gAngle +=
-                    2 * Math.PI;
-            }
+                ctx.textAlign =
+                    "center";
 
+                ctx.shadowColor =
+                    "#000";
 
-            while (
-                gAngle > Math.PI
-            ) {
-                gAngle -=
-                    2 * Math.PI;
-            }
+                ctx.shadowBlur = 6;
 
+                ctx.fillText(
+                    item.name +
+                    " [R 키로 습득]",
+                    sx,
+                    centerY -
+                    size / 1.2
+                );
 
-            if (
-                Math.abs(gAngle) <
-                    fov / 1.8 &&
-                gDist <
-                    curFlashRange
-            ) {
-
-                const sx =
-                    canvas.width / 2 +
-                    Math.tan(gAngle) *
-                    projDist;
-
-
-                const rayIndex =
-                    Math.floor(
-                        sx /
-                        canvas.width *
-                        numRays
-                    );
-
-
-                if (
-                    rayIndex >= 0 &&
-                    rayIndex < numRays &&
-                    gDist <
-                        zBuffer[rayIndex]
-                ) {
-
-                    const size =
-                        Math.min(
-                            220,
-                            projDist *
-                            0.75 /
-                            gDist
-                        );
-
-
-                    const centerY =
-                        canvas.height / 2 +
-                        size / 4;
-
-
-                    drawGhost(
-                        sx,
-                        centerY,
-                        size,
-                        g.stun
-                    );
-                }
+                ctx.restore();
             }
         }
-    );
+    });
 
+    ghosts.forEach(g => {
+
+        if (g.hp <= 0) return;
+
+        const gdx =
+            g.x - px;
+
+        const gdy =
+            g.y - py;
+
+        const gDist =
+            Math.sqrt(
+                gdx * gdx +
+                gdy * gdy
+            );
+
+        let gAngle =
+            Math.atan2(
+                gdy,
+                gdx
+            ) - angle;
+
+        while (
+            gAngle < -Math.PI
+        ) {
+            gAngle += 2 * Math.PI;
+        }
+
+        while (
+            gAngle > Math.PI
+        ) {
+            gAngle -= 2 * Math.PI;
+        }
+
+        if (
+            Math.abs(gAngle) <
+                fov / 1.8 &&
+            gDist < curFlashRange
+        ) {
+
+            const sx =
+                canvas.width / 2 +
+                Math.tan(gAngle) *
+                projDist;
+
+            const rayIndex =
+                Math.floor(
+                    sx /
+                    canvas.width *
+                    numRays
+                );
+
+            if (
+                rayIndex >= 0 &&
+                rayIndex < numRays &&
+                gDist < zBuffer[rayIndex]
+            ) {
+
+                const size =
+                    Math.min(
+                        220,
+                        projDist *
+                        0.75 /
+                        gDist
+                    );
+
+                const centerY =
+                    canvas.height / 2 +
+                    size / 4;
+
+                drawGhost(
+                    sx,
+                    centerY,
+                    size,
+                    g.stun
+                );
+            }
+        }
+    });
 
     drawWeapon();
 
-
     ctx.restore();
 }
-
-
-/* =========================================================
-   GAME LOOP
-========================================================= */
 
 function gameLoop() {
 
@@ -3548,26 +2735,18 @@ function gameLoop() {
     );
 }
 
-
-/* =========================================================
-   START
-========================================================= */
-
 initGame();
 
 gameLoop();
 
 </script>
 
-</div>
-
 </body>
 </html>
 """
 
 components.html(
-    horror_game_html,
-    height=620,
-    scrolling=False
+horror_game_html,
+height=620,
+scrolling=False
 )
-```
