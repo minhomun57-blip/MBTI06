@@ -2,19 +2,20 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="🏚️ 저주받은 저택 - 공포 탐험",
-    layout="wide"
+page_title="🏚️ 저주받은 저택",
+layout="wide"
 )
 
 st.title("🏚️ 저주받은 저택")
 st.caption(
-    "W/A/S/D: 이동 | ←/→: 회전 | E: 달리기 | "
-    "R: 문 열기/아이템 획득 | 1: 회복 | 2: 손전등 강화 | "
-    "3: 퇴마부적 | 마우스 드래그: 시점 회전 | 클릭: 공격"
+"W/A/S/D: 이동 | ←/→: 회전 | E: 달리기 | R: 문 열기/아이템 획득 | "
+"1: 회복약 | 2: 배터리 | 3: 퇴마부적 | 클릭: 공격"
 )
 
 horror_game_html = r"""
+
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta charset="utf-8">
@@ -33,7 +34,6 @@ body {
     height: 580px;
     display: block;
     cursor: grab;
-    background: #000;
 }
 
 #canvas:active {
@@ -59,14 +59,11 @@ body {
     height: 12px;
     background: rgba(0,0,0,.9);
     border: 1px solid #444;
-    border-radius: 2px;
-    overflow: hidden;
 }
 
 .bar-fill {
     height: 100%;
     width: 100%;
-    transition: width .05s linear;
 }
 
 #hp-bar {
@@ -98,14 +95,11 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    border-radius: 3px;
     text-align: center;
 }
 
 .slot-key {
     color: #ffaa00;
-    font-size: 10px;
-    margin-bottom: 2px;
     font-weight: bold;
 }
 
@@ -121,7 +115,6 @@ body {
     text-shadow: 0 0 10px #000;
     z-index: 5;
     pointer-events: none;
-    letter-spacing: 1px;
 }
 
 #room-info {
@@ -132,7 +125,6 @@ body {
     font-size: 11px;
     text-align: right;
     z-index: 5;
-    pointer-events: none;
 }
 
 #glitch-overlay {
@@ -166,12 +158,6 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    animation: flash-red .08s infinite alternate;
-}
-
-@keyframes flash-red {
-    0% { background:#000; }
-    100% { background:#200000; }
 }
 
 #scare-face {
@@ -187,7 +173,6 @@ body {
     border-radius: 45% 45% 50% 50%;
     position: relative;
     box-shadow: 0 0 150px #f00;
-    animation: violent-shake .015s infinite alternate;
 }
 
 .eye {
@@ -195,7 +180,7 @@ body {
     top: 25%;
     width: 65px;
     height: 85px;
-    background: white;
+    background: #fff;
     border-radius: 50%;
     box-shadow:
         inset 0 0 30px #f00,
@@ -204,12 +189,10 @@ body {
 
 .eye.left {
     left: 18%;
-    transform: rotate(-15deg);
 }
 
 .eye.right {
     right: 18%;
-    transform: rotate(15deg);
 }
 
 .pupil {
@@ -247,53 +230,23 @@ body {
         );
 }
 
-.blood-drip {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background:
-        linear-gradient(
-            180deg,
-            rgba(150,0,0,.6),
-            transparent 80%
-        );
-}
-
 #scare-text {
     color: red;
     font-size: 30px;
     font-weight: 900;
     margin-top: 30px;
-    text-shadow: 0 0 25px red;
-    letter-spacing: 3px;
 }
 
 #restart-btn {
     margin-top: 25px;
     padding: 12px 32px;
-    font-size: 15px;
     background: #050505;
     color: #f33;
     border: 1px solid red;
     cursor: pointer;
-    font-weight: bold;
-}
-
-#restart-btn:hover {
-    background: #400;
-    color: white;
-}
-
-@keyframes violent-shake {
-    0% {
-        transform: translate(10px,-10px) scale(1.1);
-    }
-    100% {
-        transform: translate(-10px,10px) scale(1.22);
-    }
 }
 </style>
+
 </head>
 
 <body>
@@ -302,100 +255,106 @@ body {
 
 <div id="ui">
 
-    <div>
-        <span>생명력</span>
-        <div class="bar-container">
-            <div id="hp-bar" class="bar-fill"></div>
-        </div>
+```
+<div>
+    <span>생명력</span>
+    <div class="bar-container">
+        <div id="hp-bar" class="bar-fill"></div>
     </div>
+</div>
 
-    <div>
-        <span>스테미나 (E: 달리기)</span>
-        <div class="bar-container">
-            <div id="stamina-bar" class="bar-fill"></div>
-        </div>
+<div>
+    <span>스테미나</span>
+    <div class="bar-container">
+        <div id="stamina-bar" class="bar-fill"></div>
     </div>
+</div>
 
-    <div>
-        무기:
-        <span id="weapon" style="color:#ffcc00;">
-            맨손
-        </span>
-    </div>
+<div>
+    무기:
+    <span id="weapon" style="color:#ffcc00;">
+        맨손
+    </span>
+</div>
+```
 
 </div>
 
 <div id="room-info">
     <div
-        id="current-room-name"
         style="color:#ff3333;font-weight:bold;"
+        id="current-room-name"
     >
         현재 위치: 중앙 홀
     </div>
-
-    <div>
-        화면을 클릭하여 조작하세요
-    </div>
+    <div>화면 클릭 후 이동하세요</div>
 </div>
 
 <div id="inventory">
 
-    <div class="slot">
-        <span class="slot-key">[1]</span>
-        회복약<br>
-        <span id="cnt-potion">0</span>
-    </div>
+```
+<div class="slot">
+    <span class="slot-key">[1]</span>
+    회복약
+    <br>
+    <span id="cnt-potion">0</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[2]</span>
-        배터리<br>
-        <span id="cnt-battery">0</span>
-    </div>
+<div class="slot">
+    <span class="slot-key">[2]</span>
+    배터리
+    <br>
+    <span id="cnt-battery">0</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[3]</span>
-        퇴마부적<br>
-        <span id="cnt-talisman">1</span>
-    </div>
+<div class="slot">
+    <span class="slot-key">[3]</span>
+    퇴마부적
+    <br>
+    <span id="cnt-talisman">1</span>
+</div>
 
-    <div class="slot">
-        <span class="slot-key">[4]</span>
-        탈출열쇠<br>
-        <span id="cnt-key">미획득</span>
-    </div>
+<div class="slot">
+    <span class="slot-key">[4]</span>
+    탈출열쇠
+    <br>
+    <span id="cnt-key">미획득</span>
+</div>
+```
 
 </div>
 
 <div id="msg">
-    🏚️ 저주받은 저택에 들어왔습니다...
+화면을 클릭하여 게임을 시작하세요
 </div>
 
 <div id="jumpscare">
 
-    <div id="scare-face">
+```
+<div id="scare-face">
 
-        <div class="eye left">
-            <div class="pupil"></div>
-        </div>
-
-        <div class="eye right">
-            <div class="pupil"></div>
-        </div>
-
-        <div class="mouth">
-            <div class="teeth"></div>
-            <div class="blood-drip"></div>
-        </div>
-
+    <div class="eye left">
+        <div class="pupil"></div>
     </div>
 
-    <div id="scare-text">
-        당신의 영혼은 이제 저택의 일부입니다...
+    <div class="eye right">
+        <div class="pupil"></div>
     </div>
 
-    <button id="restart-btn" onclick="resetGame()">
-        다시 도전하기
-    </button>
+    <div class="mouth">
+        <div class="teeth"></div>
+    </div>
+
+</div>
+
+<div id="scare-text">
+    당신의 영혼은 이제 저택의 일부입니다...
+</div>
+
+<button id="restart-btn" onclick="resetGame()">
+    다시 도전하기
+</button>
+```
 
 </div>
 
@@ -403,406 +362,113 @@ body {
 
 <script>
 
-const AudioContext =
-    window.AudioContext ||
-    window.webkitAudioContext;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-let audioCtx = null;
-
-function initAudio() {
-
-    if (!audioCtx) {
-        audioCtx = new AudioContext();
-    }
-
-}
-
-function playSound(type) {
-
-    if (!audioCtx) return;
-
-    const now = audioCtx.currentTime;
-
-    let osc =
-        audioCtx.createOscillator();
-
-    let gain =
-        audioCtx.createGain();
-
-    if (type === "attack") {
-
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(
-            30,
-            now + .15
-        );
-
-        gain.gain.setValueAtTime(.4, now);
-        gain.gain.exponentialRampToValueAtTime(
-            .01,
-            now + .15
-        );
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(now + .15);
-
-    }
-
-    else if (type === "hit") {
-
-        osc.type = "square";
-        osc.frequency.setValueAtTime(80, now);
-        osc.frequency.exponentialRampToValueAtTime(
-            15,
-            now + .2
-        );
-
-        gain.gain.setValueAtTime(.5, now);
-        gain.gain.exponentialRampToValueAtTime(
-            .01,
-            now + .2
-        );
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(now + .2);
-
-    }
-
-    else if (type === "item") {
-
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(520, now);
-        osc.frequency.exponentialRampToValueAtTime(
-            1040,
-            now + .18
-        );
-
-        gain.gain.setValueAtTime(.3, now);
-        gain.gain.exponentialRampToValueAtTime(
-            .01,
-            now + .18
-        );
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(now + .18);
-
-    }
-
-    else if (type === "door") {
-
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.linearRampToValueAtTime(
-            60,
-            now + .3
-        );
-
-        gain.gain.setValueAtTime(.4, now);
-        gain.gain.exponentialRampToValueAtTime(
-            .01,
-            now + .3
-        );
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(now + .3);
-
-    }
-
-    else if (type === "jumpscare") {
-
-        osc.type = "sawtooth";
-
-        osc.frequency.setValueAtTime(
-            180,
-            now
-        );
-
-        osc.frequency.linearRampToValueAtTime(
-            1100,
-            now + .08
-        );
-
-        osc.frequency.linearRampToValueAtTime(
-            60,
-            now + 1.2
-        );
-
-        gain.gain.setValueAtTime(1, now);
-
-        gain.gain.exponentialRampToValueAtTime(
-            .01,
-            now + 1.2
-        );
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(now + 1.2);
-
-    }
-
-}
-
-
-/* =========================
-   CANVAS
-========================= */
-
-const canvas =
-    document.getElementById("canvas");
-
-const ctx =
-    canvas.getContext("2d");
-
-canvas.width = 800;
+canvas.width = 900;
 canvas.height = 580;
 
 
 /* =========================
-   TEXTURES
-========================= */
-
-const wallTex =
-    document.createElement("canvas");
-
-wallTex.width = 64;
-wallTex.height = 64;
-
-const wCtx =
-    wallTex.getContext("2d");
-
-wCtx.fillStyle = "#2d1d1a";
-wCtx.fillRect(0,0,64,64);
-
-wCtx.fillStyle = "#140a08";
-
-for (let i=0;i<64;i+=16) {
-
-    wCtx.fillRect(
-        0,
-        i,
-        64,
-        2
-    );
-
-    for (let j=0;j<64;j+=16) {
-
-        let offset =
-            (i/16)%2 === 0
-            ? 0
-            : 8;
-
-        wCtx.fillRect(
-            j+offset,
-            i,
-            2,
-            16
-        );
-
-    }
-
-}
-
-
-/* =========================
-   DOOR TEXTURE
-========================= */
-
-const doorTex =
-    document.createElement("canvas");
-
-doorTex.width = 64;
-doorTex.height = 64;
-
-const dCtx =
-    doorTex.getContext("2d");
-
-dCtx.fillStyle = "#221108";
-dCtx.fillRect(0,0,64,64);
-
-dCtx.fillStyle = "#4a2b16";
-dCtx.fillRect(3,3,58,58);
-
-dCtx.fillStyle = "#3a200f";
-
-for(let x=4;x<60;x+=6) {
-
-    dCtx.fillRect(
-        x,
-        4,
-        2,
-        56
-    );
-
-}
-
-function drawPanel(
-    px,
-    py,
-    pw,
-    ph
-) {
-
-    dCtx.fillStyle = "#1e0d05";
-    dCtx.fillRect(
-        px,
-        py,
-        pw,
-        ph
-    );
-
-    dCtx.fillStyle = "#5c381d";
-    dCtx.fillRect(
-        px+2,
-        py+2,
-        pw-4,
-        ph-4
-    );
-
-    dCtx.fillStyle = "#361d0d";
-    dCtx.fillRect(
-        px+4,
-        py+4,
-        pw-8,
-        ph-8
-    );
-
-}
-
-drawPanel(8,8,21,22);
-drawPanel(35,8,21,22);
-drawPanel(8,34,21,22);
-drawPanel(35,34,21,22);
-
-dCtx.fillStyle = "#8a6818";
-dCtx.fillRect(50,28,6,14);
-
-dCtx.fillStyle = "#ffcc00";
-dCtx.fillRect(51,29,4,12);
-
-dCtx.fillStyle = "#ffe066";
-dCtx.fillRect(44,32,8,4);
-
-dCtx.beginPath();
-
-dCtx.arc(
-    53,
-    31,
-    3,
-    0,
-    Math.PI*2
-);
-
-dCtx.fill();
-
-
-/* =========================
-   GAME VARIABLES
+   게임 데이터
 ========================= */
 
 let houseMap = [];
+let MAP_SIZE = 21;
 
-const initialMap = [
-
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,1,1,1,1,0,1,0,0,0,0,0,1,0,1,1,1],
-
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-
-    [1,0,1,1,1,0,1,0,0,0,0,0,1,0,1,1,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-
-];
-
-const MAP_SIZE = initialMap.length;
-
-let px = 8.5;
-let py = 9.5;
+let px = 10.5;
+let py = 10.5;
 
 let angle = 0;
 
 let hp = 100;
-
 let stamina = 100;
 
-let flashRange = 18;
+let flashRange = 12;
 
 let gameOver = false;
 
-let isAttacking = 0;
-
-let screenShake = 0;
-
-let animTimer = 0;
-
-let zBuffer =
-    new Array(180).fill(0);
-
 let items = {
-
     potion: 0,
-
     battery: 0,
-
     talisman: 1,
-
     key: false,
-
     knife: false
-
 };
 
 let ghosts = [];
-
 let worldItems = [];
-
 let furnitureList = [];
+
+let isAttacking = 0;
+let screenShake = 0;
+let animTimer = 0;
+
+const fov = Math.PI * 0.48;
 
 
 /* =========================
-   INITIALIZE
+   맵
+=========================
+
+   0 = 빈 공간
+   1 = 벽
+   2 = 얇은 문
+   3 = 탈출문
+
+   기존보다 방 개수를 줄이고
+   중앙 홀을 크게 만듦.
+*/
+
+const initialMap = [
+
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,1],
+
+[1,1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,3,1],
+
+[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+
+];
+
+
+/* =========================
+   초기화
 ========================= */
 
 function initGame() {
@@ -812,122 +478,92 @@ function initGame() {
             JSON.stringify(initialMap)
         );
 
-    px = 8.5;
-    py = 9.5;
+    MAP_SIZE = houseMap.length;
 
     /*
-       중앙 홀을 바라보도록 시작
+       벽에 붙어서 시작하지 않도록
+       중앙 홀 안쪽에서 시작.
     */
-    angle = 0;
+    px = 10.5;
+    py = 10.5;
+
+    /*
+       처음부터 벽이 눈앞에 보이는
+       문제를 방지하기 위해
+       아래쪽을 바라봄.
+    */
+    angle = Math.PI / 2;
 
     hp = 100;
-
     stamina = 100;
 
-    flashRange = 18;
+    flashRange = 12;
 
     gameOver = false;
 
-    isAttacking = 0;
-
-    screenShake = 0;
-
     items = {
-
         potion: 0,
-
         battery: 0,
-
         talisman: 1,
-
         key: false,
-
         knife: false
-
     };
 
-
-    /* =========================
-       GHOSTS
-    ========================= */
-
+    /*
+       ★ 귀신은 단 한 마리
+    */
     ghosts = [
-
         {
-            x: 2.5,
-            y: 2.5,
-            hp: 100,
-            stun: 0
-        },
-
-        {
-            x: 14.5,
-            y: 2.5,
-            hp: 100,
-            stun: 0
-        },
-
-        {
-            x: 2.5,
-            y: 14.5,
-            hp: 100,
-            stun: 0
-        },
-
-        {
-            x: 14.5,
-            y: 14.5,
+            x: 18.5,
+            y: 18.5,
             hp: 100,
             stun: 0
         }
-
     ];
 
-
-    /* =========================
-       ITEMS
-    ========================= */
-
+    /*
+       아이템
+    */
     worldItems = [
 
         {
             x: 2.5,
-            y: 1.5,
+            y: 2.5,
             type: "knife",
             name: "녹슨 단검"
         },
 
         {
-            x: 14.5,
-            y: 1.5,
+            x: 18.5,
+            y: 2.5,
             type: "potion",
-            name: "의용 회복제"
+            name: "회복약"
         },
 
         {
             x: 2.5,
-            y: 5.0,
+            y: 10.5,
             type: "battery",
             name: "고전압 배터리"
         },
 
         {
-            x: 14.5,
-            y: 5.0,
+            x: 18.5,
+            y: 10.5,
             type: "potion",
-            name: "의용 회복제"
+            name: "회복약"
         },
 
         {
             x: 2.5,
-            y: 15.5,
+            y: 18.5,
             type: "battery",
-            name: "고전압 배터리"
+            name: "배터리"
         },
 
         {
-            x: 14.5,
-            y: 15.5,
+            x: 18.5,
+            y: 18.5,
             type: "key",
             name: "피묻은 열쇠"
         }
@@ -935,241 +571,203 @@ function initGame() {
     ];
 
 
-    /* =========================
-       FURNITURE
-    ========================= */
-
+    /*
+       ★ 가구를 많이 배치
+    */
     furnitureList = [
 
-        /* 왼쪽 위 방 */
+        /* 북서쪽 방 */
 
         {
-            x:1.5,
-            y:1.8,
-            type:"bookshelf",
-            name:"낡은 책장"
+            x: 1.5,
+            y: 1.5,
+            type: "bookshelf",
+            name: "큰 책장"
         },
 
         {
-            x:1.5,
-            y:3.5,
-            type:"bookshelf",
-            name:"먼지 쌓인 책장"
+            x: 3.5,
+            y: 1.5,
+            type: "bookshelf",
+            name: "낡은 책장"
         },
 
         {
-            x:4.2,
-            y:1.5,
-            type:"desk",
-            name:"오래된 책상"
+            x: 1.5,
+            y: 3.5,
+            type: "desk",
+            name: "나무 책상"
         },
 
         {
-            x:4.2,
-            y:2.5,
-            type:"chair",
-            name:"낡은 의자"
+            x: 3.5,
+            y: 3.5,
+            type: "chair",
+            name: "의자"
         },
 
         {
-            x:4.2,
-            y:4.2,
-            type:"cabinet",
-            name:"나무 수납장"
+            x: 4.5,
+            y: 2.5,
+            type: "cabinet",
+            name: "서류장"
         },
 
-        /* 오른쪽 위 방 */
+
+        /* 북동쪽 방 */
 
         {
-            x:14.5,
-            y:1.8,
-            type:"bed",
-            name:"낡은 침대"
-        },
-
-        {
-            x:15.5,
-            y:3.5,
-            type:"cabinet",
-            name:"약품 보관함"
+            x: 17.5,
+            y: 1.5,
+            type: "bed",
+            name: "낡은 침대"
         },
 
         {
-            x:12.8,
-            y:1.5,
-            type:"desk",
-            name:"작은 책상"
+            x: 19.0,
+            y: 1.5,
+            type: "cabinet",
+            name: "약품장"
         },
 
         {
-            x:12.8,
-            y:2.5,
-            type:"chair",
-            name:"나무 의자"
+            x: 17.5,
+            y: 3.5,
+            type: "desk",
+            name: "작업대"
         },
 
         {
-            x:15.0,
-            y:4.5,
-            type:"bookshelf",
-            name:"의문의 서가"
+            x: 19.0,
+            y: 3.5,
+            type: "chair",
+            name: "의자"
         },
 
-        /* 중앙 홀 */
+
+        /* 중앙 */
 
         {
-            x:7.5,
-            y:8.0,
-            type:"chair",
-            name:"복도 의자"
-        },
-
-        {
-            x:10.0,
-            y:8.0,
-            type:"clock",
-            name:"거대한 괘종시계"
+            x: 8.5,
+            y: 8.5,
+            type: "clock",
+            name: "괘종시계"
         },
 
         {
-            x:12.5,
-            y:8.0,
-            type:"chair",
-            name:"낡은 의자"
+            x: 12.5,
+            y: 8.5,
+            type: "chair",
+            name: "의자"
         },
 
         {
-            x:7.5,
-            y:11.5,
-            type:"chair",
-            name:"부서진 의자"
+            x: 8.5,
+            y: 12.5,
+            type: "chair",
+            name: "낡은 의자"
         },
 
         {
-            x:10.0,
-            y:11.5,
-            type:"candelabra",
-            name:"촛대"
+            x: 12.5,
+            y: 12.5,
+            type: "candelabra",
+            name: "촛대"
         },
 
         {
-            x:12.5,
-            y:11.5,
-            type:"chair",
-            name:"핏자국 의자"
+            x: 10.5,
+            y: 7.5,
+            type: "candelabra",
+            name: "촛대"
         },
 
         {
-            x:8.0,
-            y:6.8,
-            type:"candelabra",
-            name:"벽 촛대"
+            x: 10.5,
+            y: 13.5,
+            type: "candelabra",
+            name: "촛대"
+        },
+
+
+        /* 남서쪽 방 */
+
+        {
+            x: 1.5,
+            y: 16.5,
+            type: "bed",
+            name: "핏자국 침대"
         },
 
         {
-            x:12.0,
-            y:6.8,
-            type:"candelabra",
-            name:"벽 촛대"
-        },
-
-        /* 왼쪽 아래 */
-
-        {
-            x:1.5,
-            y:13.5,
-            type:"bed",
-            name:"핏자국 침대"
+            x: 3.5,
+            y: 16.5,
+            type: "cabinet",
+            name: "장롱"
         },
 
         {
-            x:4.2,
-            y:13.5,
-            type:"bookshelf",
-            name:"작은 책장"
+            x: 1.5,
+            y: 19,
+            type: "bookshelf",
+            name: "작은 책장"
         },
 
         {
-            x:1.5,
-            y:15.5,
-            type:"cabinet",
-            name:"낡은 보관함"
+            x: 3.5,
+            y: 19,
+            type: "desk",
+            name: "작은 책상"
+        },
+
+
+        /* 남동쪽 방 */
+
+        {
+            x: 17.5,
+            y: 16.5,
+            type: "cabinet",
+            name: "철제 보관함"
         },
 
         {
-            x:4.2,
-            y:15.5,
-            type:"desk",
-            name:"실험용 책상"
+            x: 19,
+            y: 16.5,
+            type: "desk",
+            name: "실험용 책상"
         },
 
         {
-            x:4.2,
-            y:16.3,
-            type:"chair",
-            name:"실험실 의자"
-        },
-
-        /* 오른쪽 아래 */
-
-        {
-            x:14.5,
-            y:13.5,
-            type:"cabinet",
-            name:"철제 보관함"
+            x: 17.5,
+            y: 19,
+            type: "bookshelf",
+            name: "실험 기록장"
         },
 
         {
-            x:12.8,
-            y:15.0,
-            type:"desk",
-            name:"연구 책상"
-        },
-
-        {
-            x:12.8,
-            y:15.8,
-            type:"chair",
-            name:"실험실 의자"
-        },
-
-        {
-            x:15.0,
-            y:15.5,
-            type:"bookshelf",
-            name:"금지된 서적"
-        },
-
-        {
-            x:14.5,
-            y:16.3,
-            type:"cabinet",
-            name:"잠긴 철제 캐비닛"
+            x: 19,
+            y: 19,
+            type: "chair",
+            name: "낡은 의자"
         }
 
     ];
 
+    document.getElementById(
+        "jumpscare"
+    ).style.display = "none";
 
-    document
-        .getElementById("jumpscare")
-        .style.display = "none";
-
-    document
-        .getElementById("msg")
-        .innerText =
-        "🏚️ 저주받은 저택에 들어왔습니다. 주변을 탐색하세요.";
-
-    document
-        .getElementById("msg")
-        .style.color = "#ff3333";
+    document.getElementById(
+        "msg"
+    ).innerText =
+        "문 앞이나 아이템 근처에서 R 키를 누르세요";
 
     updateUI();
-
 }
 
 
 /* =========================
-   INPUT
+   키 입력
 ========================= */
 
 const keys = {};
@@ -1184,54 +782,36 @@ function parseKey(k) {
 
     k = k.toLowerCase();
 
-    if (k === "ㅈ")
-        return "w";
-
-    if (k === "ㄴ")
-        return "s";
-
-    if (k === "ㅁ")
-        return "a";
-
-    if (k === "ㅇ")
-        return "d";
-
-    if (k === "ㄷ")
-        return "e";
-
-    if (k === "ㄱ")
-        return "r";
+    if (k === "ㅈ") return "w";
+    if (k === "ㄴ") return "s";
+    if (k === "ㅁ") return "a";
+    if (k === "ㅇ") return "d";
+    if (k === "ㄷ") return "e";
+    if (k === "ㄱ") return "r";
 
     return k;
-
 }
 
 
 /* =========================
-   INTERACTION
+   상호작용
 ========================= */
 
 function handleInteract() {
 
-    if (gameOver)
-        return;
+    if (gameOver) return;
 
-    const checkDist = 1.3;
+    let checkDist = 1.2;
 
-    const targetX =
+    let targetX =
         Math.floor(
-            px +
-            Math.cos(angle) *
-            checkDist
+            px + Math.cos(angle) * checkDist
         );
 
-    const targetY =
+    let targetY =
         Math.floor(
-            py +
-            Math.sin(angle) *
-            checkDist
+            py + Math.sin(angle) * checkDist
         );
-
 
     if (
         targetX >= 0 &&
@@ -1240,28 +820,19 @@ function handleInteract() {
         targetY < MAP_SIZE
     ) {
 
-        const tile =
+        let tile =
             houseMap[targetY][targetX];
-
-
-        /* 일반 문 */
 
         if (tile === 2) {
 
             houseMap[targetY][targetX] = 0;
-
-            playSound("door");
 
             showTmpMsg(
                 "🚪 문을 열었습니다."
             );
 
             return;
-
         }
-
-
-        /* 탈출문 */
 
         if (tile === 3) {
 
@@ -1269,32 +840,24 @@ function handleInteract() {
 
                 gameOver = true;
 
-                playSound("door");
+                document.getElementById(
+                    "msg"
+                ).innerText =
+                    "🚪 탈출 성공!";
 
-                document
-                    .getElementById("msg")
-                    .innerText =
-                    "🚪 탈출 성공! 저택에서 살아남았습니다!";
+                document.getElementById(
+                    "msg"
+                ).style.color = "gold";
 
-                document
-                    .getElementById("msg")
-                    .style.color =
-                    "gold";
-
-            }
-
-            else {
+            } else {
 
                 showTmpMsg(
-                    "🔒 문이 잠겨 있습니다. 피묻은 열쇠가 필요합니다."
+                    "🔒 피묻은 열쇠가 필요합니다."
                 );
-
             }
 
             return;
-
         }
-
     }
 
 
@@ -1306,21 +869,18 @@ function handleInteract() {
         i--
     ) {
 
-        const item =
-            worldItems[i];
+        let item = worldItems[i];
 
-        const dist =
-            Math.hypot(
-                px - item.x,
-                py - item.y
+        let dist =
+            Math.sqrt(
+                (px-item.x)**2 +
+                (py-item.y)**2
             );
 
         if (
             dist < 1.5 &&
             !picked
         ) {
-
-            playSound("item");
 
             if (item.type === "key") {
 
@@ -1332,7 +892,7 @@ function handleInteract() {
 
             }
 
-            else if (item.type === "knife") {
+            if (item.type === "knife") {
 
                 items.knife = true;
 
@@ -1342,24 +902,23 @@ function handleInteract() {
 
             }
 
-            else if (item.type === "potion") {
+            if (item.type === "potion") {
 
                 items.potion++;
 
                 showTmpMsg(
-                    "💊 회복제를 획득했습니다!"
+                    "💊 회복약을 획득했습니다!"
                 );
 
             }
 
-            else if (item.type === "battery") {
+            if (item.type === "battery") {
 
                 items.battery++;
 
                 showTmpMsg(
                     "🔋 배터리를 획득했습니다!"
                 );
-
             }
 
             worldItems.splice(i,1);
@@ -1367,33 +926,27 @@ function handleInteract() {
             picked = true;
 
             updateUI();
-
         }
-
     }
-
 
     if (!picked) {
 
         showTmpMsg(
-            "상호작용할 대상이 가까이에 없습니다."
+            "상호작용할 대상이 없습니다."
         );
-
     }
-
 }
 
 
 /* =========================
-   KEYBOARD
+   키보드
 ========================= */
 
 window.addEventListener(
     "keydown",
     e => {
 
-        const k =
-            parseKey(e.key);
+        let k = parseKey(e.key);
 
         keys[k] = true;
 
@@ -1406,21 +959,13 @@ window.addEventListener(
                 " "
             ].includes(e.key)
         ) {
-
             e.preventDefault();
-
         }
 
-
-        if (gameOver)
-            return;
-
+        if (gameOver) return;
 
         if (k === "r")
             handleInteract();
-
-
-        /* 회복약 */
 
         if (
             e.key === "1" &&
@@ -1435,40 +980,28 @@ window.addEventListener(
 
             items.potion--;
 
-            playSound("item");
-
             showTmpMsg(
                 "💊 체력을 회복했습니다."
             );
 
             updateUI();
-
         }
-
-
-        /* 배터리 */
 
         if (
             e.key === "2" &&
             items.battery > 0
         ) {
 
-            flashRange = 24;
+            flashRange = 16;
 
             items.battery--;
 
-            playSound("item");
-
             showTmpMsg(
-                "🔋 손전등 출력이 강화되었습니다."
+                "🔋 손전등이 강해졌습니다."
             );
 
             updateUI();
-
         }
-
-
-        /* 부적 */
 
         if (
             e.key === "3" &&
@@ -1478,37 +1011,26 @@ window.addEventListener(
             ghosts.forEach(
                 g => {
 
-                    if (g.hp <= 0)
-                        return;
-
                     g.stun = 200;
 
-                    const dx =
-                        g.x - px;
+                    g.x +=
+                        (g.x-px)*0.5;
 
-                    const dy =
-                        g.y - py;
-
-                    g.x += dx * .5;
-                    g.y += dy * .5;
-
+                    g.y +=
+                        (g.y-py)*0.5;
                 }
             );
 
             items.talisman--;
 
-            playSound("item");
-
             screenShake = 12;
 
             showTmpMsg(
-                "📜 퇴마부적으로 원혼을 밀어냈습니다!"
+                "📜 부적으로 귀신을 밀어냈습니다!"
             );
 
             updateUI();
-
         }
-
     }
 );
 
@@ -1520,32 +1042,26 @@ window.addEventListener(
         keys[
             parseKey(e.key)
         ] = false;
-
     }
 );
 
 
 /* =========================
-   MOUSE
+   마우스
 ========================= */
 
 let isMouseDown = false;
-
 let lastMouseX = 0;
 
 canvas.addEventListener(
     "mousedown",
     e => {
 
-        initAudio();
-
         canvas.focus();
 
         isMouseDown = true;
 
-        lastMouseX =
-            e.clientX;
-
+        lastMouseX = e.clientX;
 
         if (
             items.knife &&
@@ -1555,12 +1071,8 @@ canvas.addEventListener(
 
             isAttacking = 10;
 
-            playSound("attack");
-
             checkAttackHit();
-
         }
-
     }
 );
 
@@ -1569,7 +1081,6 @@ window.addEventListener(
     () => {
 
         isMouseDown = false;
-
     }
 );
 
@@ -1577,112 +1088,74 @@ window.addEventListener(
     "mousemove",
     e => {
 
-        if (!isMouseDown)
-            return;
+        if (isMouseDown) {
 
-        const dx =
-            e.clientX -
-            lastMouseX;
+            let dx =
+                e.clientX -
+                lastMouseX;
 
-        angle += dx * .006;
+            angle +=
+                dx * 0.006;
 
-        lastMouseX =
-            e.clientX;
-
+            lastMouseX =
+                e.clientX;
+        }
     }
 );
 
 
 /* =========================
-   MESSAGE
-========================= */
-
-function showTmpMsg(txt) {
-
-    const msg =
-        document.getElementById("msg");
-
-    msg.innerText = txt;
-
-    setTimeout(
-        () => {
-
-            if (
-                !gameOver &&
-                msg.innerText === txt
-            ) {
-
-                msg.innerText = "";
-
-            }
-
-        },
-        2500
-    );
-
-}
-
-
-/* =========================
-   ATTACK
+   공격
 ========================= */
 
 function checkAttackHit() {
 
-    ghosts.forEach(
-        g => {
+    ghosts.forEach(g => {
 
-            if (g.hp <= 0)
-                return;
+        if (g.hp <= 0)
+            return;
 
-            const dx =
-                g.x - px;
+        let dx =
+            g.x - px;
 
-            const dy =
-                g.y - py;
+        let dy =
+            g.y - py;
 
-            const dist =
-                Math.hypot(dx,dy);
+        let dist =
+            Math.sqrt(
+                dx*dx +
+                dy*dy
+            );
 
-            let a =
-                Math.atan2(
-                    dy,
-                    dx
-                ) - angle;
+        let a =
+            Math.atan2(dy,dx)
+            - angle;
 
-            while (a < -Math.PI)
-                a += Math.PI * 2;
+        while (a < -Math.PI)
+            a += Math.PI*2;
 
-            while (a > Math.PI)
-                a -= Math.PI * 2;
+        while (a > Math.PI)
+            a -= Math.PI*2;
 
+        if (
+            dist < 2.0 &&
+            Math.abs(a) < 0.7
+        ) {
 
-            if (
-                dist < 2.2 &&
-                Math.abs(a) < .7
-            ) {
+            g.hp -= 50;
 
-                g.hp -= 50;
+            g.stun = 50;
 
-                g.stun = 50;
+            screenShake = 8;
 
-                playSound("hit");
+            if (g.hp <= 0) {
 
-                screenShake = 8;
-
-                if (g.hp <= 0) {
-
-                    showTmpMsg(
-                        "💀 원혼을 성불시켰습니다!"
-                    );
-
-                }
-
+                showTmpMsg(
+                    "💀 원혼을 성불시켰습니다!"
+                );
             }
-
         }
-    );
-
+    });
 }
 
 
@@ -1692,52 +1165,49 @@ function checkAttackHit() {
 
 function updateUI() {
 
-    document
-        .getElementById("hp-bar")
-        .style.width =
+    document.getElementById(
+        "hp-bar"
+    ).style.width =
         Math.max(0,hp) + "%";
 
-    document
-        .getElementById("stamina-bar")
-        .style.width =
+    document.getElementById(
+        "stamina-bar"
+    ).style.width =
         Math.max(0,stamina) + "%";
 
-
-    document
-        .getElementById("weapon")
-        .innerText =
+    document.getElementById(
+        "weapon"
+    ).innerText =
         items.knife
         ? "녹슨 단검"
         : "맨손";
 
-
-    document
-        .getElementById("cnt-potion")
-        .innerText =
+    document.getElementById(
+        "cnt-potion"
+    ).innerText =
         items.potion;
 
-    document
-        .getElementById("cnt-battery")
-        .innerText =
+    document.getElementById(
+        "cnt-battery"
+    ).innerText =
         items.battery;
 
-    document
-        .getElementById("cnt-talisman")
-        .innerText =
+    document.getElementById(
+        "cnt-talisman"
+    ).innerText =
         items.talisman;
 
-    document
-        .getElementById("cnt-key")
-        .innerText =
+    document.getElementById(
+        "cnt-key"
+    ).innerText =
         items.key
         ? "획득완료"
         : "미획득";
-
 }
 
 
 /* =========================
-   COLLISION
+   충돌
 ========================= */
 
 function isSolid(x,y) {
@@ -1750,7 +1220,7 @@ function isSolid(x,y) {
     )
         return true;
 
-    const tile =
+    let tile =
         houseMap[
             Math.floor(y)
         ][
@@ -1758,47 +1228,67 @@ function isSolid(x,y) {
         ];
 
     /*
-       1 = 벽
-       2 = 닫힌 문
-       3 = 탈출문
+       문 2는 열리기 전까지
+       벽으로 취급
     */
-
     return (
         tile === 1 ||
-        tile === 2 ||
-        tile === 3
+        tile === 2
     );
-
 }
 
 
 /* =========================
-   JUMPSCARE
+   게임 오버
 ========================= */
 
 function triggerJumpscare() {
 
     gameOver = true;
 
-    playSound("jumpscare");
-
-    document
-        .getElementById("jumpscare")
-        .style.display =
-        "flex";
-
+    document.getElementById(
+        "jumpscare"
+    ).style.display = "flex";
 }
 
 
 function resetGame() {
 
     initGame();
-
 }
 
 
 /* =========================
-   UPDATE
+   메시지
+========================= */
+
+function showTmpMsg(txt) {
+
+    let msg =
+        document.getElementById(
+            "msg"
+        );
+
+    msg.innerText = txt;
+
+    setTimeout(
+        () => {
+
+            if (!gameOver &&
+                msg.innerText === txt
+            ) {
+
+                msg.innerText = "";
+            }
+
+        },
+        2500
+    );
+}
+
+
+/* =========================
+   게임 업데이트
 ========================= */
 
 function update() {
@@ -1806,71 +1296,68 @@ function update() {
     if (gameOver)
         return;
 
-    animTimer += .05;
-
+    animTimer += 0.05;
 
     if (screenShake > 0)
         screenShake--;
 
 
-    /* 회전 */
+    /*
+       회전
+    */
 
     if (
         keys["left"] ||
         keys["a"]
     )
-        angle -= .045;
+        angle -= 0.045;
 
     if (
         keys["right"] ||
         keys["d"]
     )
-        angle += .045;
+        angle += 0.045;
 
 
-    /* 이동속도 */
+    /*
+       이동
+    */
 
-    const moving =
+    let running =
+        keys["e"];
+
+    let moving =
         keys["w"] ||
         keys["s"];
 
+    let speed =
+        running && stamina > 0
+        ? 0.065
+        : 0.038;
 
-    let running =
-        keys["e"] &&
-        moving &&
-        stamina > 0;
-
-
-    const speed =
-        running
-        ? .065
-        : .038;
-
-
-    if (running) {
+    if (
+        running &&
+        moving
+    ) {
 
         stamina =
             Math.max(
                 0,
-                stamina - .45
+                stamina - 0.4
             );
 
-    }
-
-    else {
+    } else {
 
         stamina =
             Math.min(
                 100,
-                stamina + .22
+                stamina + 0.2
             );
-
     }
 
 
     let dx = 0;
     let dy = 0;
-
 
     if (keys["w"]) {
 
@@ -1881,9 +1368,7 @@ function update() {
         dy +=
             Math.sin(angle) *
             speed;
-
     }
-
 
     if (keys["s"]) {
 
@@ -1894,25 +1379,21 @@ function update() {
         dy -=
             Math.sin(angle) *
             speed;
-
     }
 
 
-    /* 충돌 */
-
-    const margin = .22;
+    const margin = 0.25;
 
 
     if (
         !isSolid(
             px + dx +
-            Math.sign(dx) * margin,
+            Math.sign(dx)*margin,
             py
         )
     ) {
 
         px += dx;
-
     }
 
 
@@ -1920,193 +1401,157 @@ function update() {
         !isSolid(
             px,
             py + dy +
-            Math.sign(dy) * margin
+            Math.sign(dy)*margin
         )
     ) {
 
         py += dy;
-
     }
 
 
-    /* =========================
-       ROOM NAME
-    ========================= */
+    /*
+       현재 방
+    */
 
-    const curX =
+    let curX =
         Math.floor(px);
 
-    const curY =
+    let curY =
         Math.floor(py);
 
     let roomTxt =
         "중앙 홀";
 
-
     if (
         curX < 6 &&
         curY < 6
-    ) {
-
+    )
         roomTxt =
             "북서쪽 서재";
 
-    }
-
     else if (
-        curX > 12 &&
+        curX > 14 &&
         curY < 6
-    ) {
-
+    )
         roomTxt =
-            "북동쪽 침실";
-
-    }
+            "북동쪽 방";
 
     else if (
         curX < 6 &&
-        curY > 12
-    ) {
-
+        curY > 14
+    )
         roomTxt =
-            "남서쪽 연구실";
-
-    }
+            "남서쪽 침실";
 
     else if (
-        curX > 12 &&
-        curY > 12
-    ) {
-
+        curX > 14 &&
+        curY > 14
+    )
         roomTxt =
             "남동쪽 밀실";
 
-    }
-
-
-    document
-        .getElementById(
-            "current-room-name"
-        )
-        .innerText =
+    document.getElementById(
+        "current-room-name"
+    ).innerText =
         "현재 위치: " +
         roomTxt;
 
 
-    /* =========================
-       GHOST AI
-    ========================= */
+    /*
+       귀신 AI
+       ★ 한 마리만 존재
+    */
 
     let minDist = 999;
 
+    ghosts.forEach(g => {
 
-    ghosts.forEach(
-        g => {
+        if (g.hp <= 0)
+            return;
 
-            if (g.hp <= 0)
-                return;
+        let dx =
+            px - g.x;
+
+        let dy =
+            py - g.y;
+
+        let dist =
+            Math.sqrt(
+                dx*dx +
+                dy*dy
+            );
+
+        minDist =
+            Math.min(
+                minDist,
+                dist
+            );
+
+        if (g.stun > 0) {
+
+            g.stun--;
+
+        } else {
+
+            if (dist > 0.1) {
+
+                let mx =
+                    (dx/dist)*0.018;
+
+                let my =
+                    (dy/dist)*0.018;
 
 
-            const dx =
-                px - g.x;
-
-            const dy =
-                py - g.y;
-
-            const dist =
-                Math.hypot(dx,dy);
-
-
-            minDist =
-                Math.min(
-                    minDist,
-                    dist
-                );
+                if (
+                    !isSolid(
+                        g.x + mx,
+                        g.y
+                    )
+                )
+                    g.x += mx;
 
 
-            if (g.stun > 0) {
-
-                g.stun--;
-
+                if (
+                    !isSolid(
+                        g.x,
+                        g.y + my
+                    )
+                )
+                    g.y += my;
             }
 
-            else {
 
-                if (dist > .1) {
+            if (dist < 0.6) {
 
-                    const moveX =
-                        dx / dist * .018;
+                hp -= 2;
 
-                    const moveY =
-                        dy / dist * .018;
+                screenShake = 5;
 
-
-                    if (
-                        !isSolid(
-                            g.x + moveX,
-                            g.y
-                        )
-                    )
-                        g.x += moveX;
-
-
-                    if (
-                        !isSolid(
-                            g.x,
-                            g.y + moveY
-                        )
-                    )
-                        g.y += moveY;
-
-                }
-
-
-                if (dist < .6) {
-
-                    hp -= 2;
-
-                    screenShake = 5;
-
-                    if (hp <= 0) {
-
-                        triggerJumpscare();
-
-                    }
-
-                }
-
+                if (hp <= 0)
+                    triggerJumpscare();
             }
-
         }
-    );
+    });
 
 
-    /* =========================
-       GLITCH
-    ========================= */
+    /*
+       귀신 근처 글리치
+    */
 
     if (minDist < 5.5) {
 
-        document
-            .getElementById(
-                "glitch-overlay"
-            )
-            .style.opacity =
+        document.getElementById(
+            "glitch-overlay"
+        ).style.opacity =
             (
-                (5.5 - minDist) /
-                5.5
-            ) * .75;
+                (5.5-minDist)/5.5
+            )*0.75;
 
-    }
+    } else {
 
-    else {
-
-        document
-            .getElementById(
-                "glitch-overlay"
-            )
-            .style.opacity = 0;
-
+        document.getElementById(
+            "glitch-overlay"
+        ).style.opacity = 0;
     }
 
 
@@ -2114,295 +1559,11 @@ function update() {
         isAttacking--;
 
     updateUI();
-
 }
 
 
 /* =========================
-   ITEM DRAW
-========================= */
-
-function draw3DItem(
-    type,
-    sx,
-    sy,
-    size
-) {
-
-    ctx.save();
-
-    ctx.translate(
-        sx,
-        sy
-    );
-
-
-    if (type === "key") {
-
-        ctx.fillStyle =
-            "#ffd700";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            -size/3,
-            size/3.2,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#1a1100";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            -size/3,
-            size/6,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#ffd700";
-
-        ctx.fillRect(
-            -size/12,
-            -size/6,
-            size/6,
-            size/1.2
-        );
-
-        ctx.fillRect(
-            size/12,
-            size/4,
-            size/4,
-            size/8
-        );
-
-        ctx.fillRect(
-            size/12,
-            size/2.2,
-            size/4,
-            size/8
-        );
-
-    }
-
-
-    else if (type === "knife") {
-
-        ctx.fillStyle =
-            "#888";
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            0,
-            -size/1.5
-        );
-
-        ctx.lineTo(
-            size/6,
-            size/6
-        );
-
-        ctx.lineTo(
-            -size/6,
-            size/6
-        );
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#fff";
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            0,
-            -size/1.5
-        );
-
-        ctx.lineTo(
-            0,
-            size/6
-        );
-
-        ctx.lineTo(
-            -size/6,
-            size/6
-        );
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#4a2511";
-
-        ctx.fillRect(
-            -size/4,
-            size/6,
-            size/2,
-            size/10
-        );
-
-
-        ctx.fillStyle =
-            "#2b1408";
-
-        ctx.fillRect(
-            -size/8,
-            size/6 + size/10,
-            size/4,
-            size/2.5
-        );
-
-    }
-
-
-    else if (type === "potion") {
-
-        ctx.fillStyle =
-            "rgba(200,200,255,.4)";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            size/4,
-            size/2.2,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#ff1133";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            size/4,
-            size/2.6,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "rgba(255,255,255,.6)";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            -size/6,
-            size/6,
-            size/8,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            "#8b5a2b";
-
-        ctx.fillRect(
-            -size/6,
-            -size/3,
-            size/3,
-            size/6
-        );
-
-    }
-
-
-    else if (type === "battery") {
-
-        ctx.fillStyle =
-            "#222";
-
-        ctx.fillRect(
-            -size/3,
-            -size/3,
-            size/1.5,
-            size/1.2
-        );
-
-
-        ctx.fillStyle =
-            "#ff6600";
-
-        ctx.fillRect(
-            -size/3,
-            0,
-            size/1.5,
-            size/2.4
-        );
-
-
-        ctx.fillStyle =
-            "#aaa";
-
-        ctx.fillRect(
-            -size/8,
-            -size/2,
-            size/4,
-            size/6
-        );
-
-
-        ctx.fillStyle =
-            "#fff";
-
-        ctx.font =
-            `bold ${Math.max(
-                10,
-                Math.floor(size/3)
-            )}px sans-serif`;
-
-        ctx.textAlign =
-            "center";
-
-        ctx.textBaseline =
-            "middle";
-
-        ctx.fillText(
-            "⚡",
-            0,
-            size/5
-        );
-
-    }
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================
-   FURNITURE DRAW
+   가구 그리기
 ========================= */
 
 function drawFurniture(
@@ -2414,10 +1575,7 @@ function drawFurniture(
 
     ctx.save();
 
-    ctx.translate(
-        sx,
-        sy
-    );
+    ctx.translate(sx,sy);
 
 
     if (type === "bookshelf") {
@@ -2432,9 +1590,8 @@ function drawFurniture(
             size*1.2
         );
 
-
         ctx.fillStyle =
-            "#1e0f06";
+            "#111";
 
         ctx.fillRect(
             -size/2.3,
@@ -2443,64 +1600,30 @@ function drawFurniture(
             size*1.1
         );
 
-
         ctx.fillStyle =
-            "#4a2c16";
+            "#8b4513";
 
-        ctx.fillRect(
-            -size/2.3,
-            -size/2,
-            size/1.15,
-            size/12
-        );
+        for (
+            let i=0;
+            i<5;
+            i++
+        ) {
 
-        ctx.fillRect(
-            -size/2.3,
-            0,
-            size/1.15,
-            size/12
-        );
-
-
-        ctx.fillStyle =
-            "#aa2222";
-
-        ctx.fillRect(
-            -size/2.6,
-            -size/1.25,
-            size/8,
-            size/3
-        );
-
-
-        ctx.fillStyle =
-            "#2288aa";
-
-        ctx.fillRect(
-            -size/4,
-            -size/1.25,
-            size/7,
-            size/3.2
-        );
-
-
-        ctx.fillStyle =
-            "#ccaa22";
-
-        ctx.fillRect(
-            0,
-            -size/2.3,
-            size/6,
-            size/3
-        );
+            ctx.fillRect(
+                -size/2.2 +
+                i*size/5,
+                -size/1.1,
+                size/9,
+                size/2
+            );
+        }
 
     }
-
 
     else if (type === "desk") {
 
         ctx.fillStyle =
-            "#422817";
+            "#4b2a15";
 
         ctx.fillRect(
             -size/1.3,
@@ -2509,12 +1632,11 @@ function drawFurniture(
             size/6
         );
 
-
         ctx.fillStyle =
-            "#2b180d";
+            "#241308";
 
         ctx.fillRect(
-            -size/1.4,
+            -size/1.3,
             -size/8,
             size/8,
             size/1.5
@@ -2526,9 +1648,7 @@ function drawFurniture(
             size/8,
             size/1.5
         );
-
     }
-
 
     else if (type === "chair") {
 
@@ -2542,9 +1662,8 @@ function drawFurniture(
             size/1.8
         );
 
-
         ctx.fillStyle =
-            "#543118";
+            "#573318";
 
         ctx.fillRect(
             -size/3,
@@ -2552,27 +1671,7 @@ function drawFurniture(
             size/1.5,
             size/8
         );
-
-
-        ctx.fillStyle =
-            "#221207";
-
-        ctx.fillRect(
-            -size/3,
-            -size/4,
-            size/10,
-            size/2
-        );
-
-        ctx.fillRect(
-            size/3-size/10,
-            -size/4,
-            size/10,
-            size/2
-        );
-
     }
-
 
     else if (type === "bed") {
 
@@ -2586,7 +1685,6 @@ function drawFurniture(
             size/2
         );
 
-
         ctx.fillStyle =
             "#aaa";
 
@@ -2597,9 +1695,8 @@ function drawFurniture(
             size/4
         );
 
-
         ctx.fillStyle =
-            "#e6e6e6";
+            "#eee";
 
         ctx.fillRect(
             -size/1.1,
@@ -2607,9 +1704,7 @@ function drawFurniture(
             size/2.5,
             size/5
         );
-
     }
-
 
     else if (type === "cabinet") {
 
@@ -2623,30 +1718,16 @@ function drawFurniture(
             size*1.1
         );
 
-
-        ctx.fillStyle =
-            "#1e2327";
-
-        ctx.fillRect(
-            -size/3.5,
-            -size/1.15,
-            size/1.8,
-            size/12
-        );
-
-
         ctx.fillStyle =
             "#777";
 
         ctx.fillRect(
-            0,
+            -size/12,
             -size/2,
-            size/12,
+            size/6,
             size/8
         );
-
     }
-
 
     else if (type === "clock") {
 
@@ -2659,7 +1740,6 @@ function drawFurniture(
             size/2,
             size*1.3
         );
-
 
         ctx.fillStyle =
             "#ffeecc";
@@ -2675,25 +1755,7 @@ function drawFurniture(
         );
 
         ctx.fill();
-
-
-        ctx.fillStyle =
-            "#ffaa00";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            -size/3,
-            size/12,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fill();
-
     }
-
 
     else if (type === "candelabra") {
 
@@ -2707,7 +1769,6 @@ function drawFurniture(
             size/1.2
         );
 
-
         ctx.fillStyle =
             "#ffaa00";
 
@@ -2715,43 +1776,154 @@ function drawFurniture(
 
         ctx.arc(
             0,
-            -size/1.8,
+            -size/1.5,
             size/8,
             0,
             Math.PI*2
         );
 
         ctx.fill();
+    }
 
+
+    ctx.restore();
+}
+
+
+/* =========================
+   아이템
+========================= */
+
+function drawItem(
+    type,
+    sx,
+    sy,
+    size
+) {
+
+    ctx.save();
+
+    ctx.translate(sx,sy);
+
+    if (type === "key") {
 
         ctx.fillStyle =
-            "#ffff66";
-
-        const flicker =
-            Math.sin(animTimer*10)*2;
+            "#ffd700";
 
         ctx.beginPath();
 
         ctx.arc(
             0,
-            -size/1.4 + flicker,
-            size/12,
+            -size/3,
+            size/3,
             0,
             Math.PI*2
         );
 
         ctx.fill();
 
+        ctx.fillRect(
+            -size/12,
+            -size/5,
+            size/6,
+            size
+        );
     }
 
+    else if (type === "knife") {
+
+        ctx.fillStyle =
+            "#ccc";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            -size
+        );
+
+        ctx.lineTo(
+            size/6,
+            0
+        );
+
+        ctx.lineTo(
+            -size/6,
+            0
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle =
+            "#4a2511";
+
+        ctx.fillRect(
+            -size/5,
+            0,
+            size/2.5,
+            size/2
+        );
+    }
+
+    else if (type === "potion") {
+
+        ctx.fillStyle =
+            "#f22";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            size/5,
+            size/2.5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle =
+            "#8b5a2b";
+
+        ctx.fillRect(
+            -size/6,
+            -size/3,
+            size/3,
+            size/6
+        );
+    }
+
+    else if (type === "battery") {
+
+        ctx.fillStyle =
+            "#222";
+
+        ctx.fillRect(
+            -size/3,
+            -size/3,
+            size/1.5,
+            size
+        );
+
+        ctx.fillStyle =
+            "#ff6600";
+
+        ctx.fillRect(
+            -size/3,
+            0,
+            size/1.5,
+            size/2.5
+        );
+    }
 
     ctx.restore();
-
 }
 
 
 /* =========================
-   GHOST
+   귀신
 ========================= */
 
 function drawGhost(
@@ -2763,26 +1935,15 @@ function drawGhost(
 
     ctx.save();
 
-    ctx.translate(
-        sx,
-        sy
-    );
+    ctx.translate(sx,sy);
 
-
-    const alpha =
+    let alpha =
         stun > 0
-        ? .4
-        : .85;
-
+        ? 0.35
+        : 0.85;
 
     ctx.fillStyle =
-        `rgba(
-            200,
-            220,
-            255,
-            ${alpha}
-        )`;
-
+        `rgba(210,225,255,${alpha})`;
 
     ctx.beginPath();
 
@@ -2791,8 +1952,7 @@ function drawGhost(
         -size/2,
         size/3,
         Math.PI,
-        0,
-        false
+        0
     );
 
     ctx.lineTo(
@@ -2815,7 +1975,6 @@ function drawGhost(
         ? "#00ffff"
         : "#ff0000";
 
-
     ctx.beginPath();
 
     ctx.arc(
@@ -2827,7 +1986,6 @@ function drawGhost(
     );
 
     ctx.fill();
-
 
     ctx.beginPath();
 
@@ -2841,14 +1999,12 @@ function drawGhost(
 
     ctx.fill();
 
-
     ctx.restore();
-
 }
 
 
 /* =========================
-   WEAPON
+   무기
 ========================= */
 
 function drawWeapon() {
@@ -2856,39 +2012,21 @@ function drawWeapon() {
     if (!items.knife)
         return;
 
-
     ctx.save();
 
-
-    const swing =
+    let swing =
         isAttacking > 0
         ? (10-isAttacking)*8
         : 0;
 
-
-    const weaponX =
-        canvas.width -
-        150 -
-        swing;
-
-
-    const weaponY =
-        canvas.height -
-        100 +
-        swing;
-
-
     ctx.translate(
-        weaponX,
-        weaponY
+        canvas.width-150-swing,
+        canvas.height-100+swing
     );
-
 
     ctx.rotate(
-        -Math.PI/4 +
-        swing*.05
+        -Math.PI/4
     );
-
 
     ctx.fillStyle =
         "#aaa";
@@ -2900,18 +2038,6 @@ function drawWeapon() {
         100
     );
 
-
-    ctx.fillStyle =
-        "#fff";
-
-    ctx.fillRect(
-        0,
-        -120,
-        10,
-        100
-    );
-
-
     ctx.fillStyle =
         "#4a2511";
 
@@ -2922,10 +2048,6 @@ function drawWeapon() {
         10
     );
 
-
-    ctx.fillStyle =
-        "#2b1408";
-
     ctx.fillRect(
         -8,
         -10,
@@ -2933,20 +2055,17 @@ function drawWeapon() {
         40
     );
 
-
     ctx.restore();
-
 }
 
 
 /* =========================
-   RENDER
+   3D 렌더링
 ========================= */
 
 function render() {
 
     ctx.save();
-
 
     if (screenShake > 0) {
 
@@ -2957,13 +2076,14 @@ function render() {
             (Math.random()-.5) *
             screenShake
         );
-
     }
 
 
-    /* 천장 */
+    /*
+       천장
+    */
 
-    const ceil =
+    let ceiling =
         ctx.createLinearGradient(
             0,
             0,
@@ -2971,18 +2091,18 @@ function render() {
             canvas.height/2
         );
 
-    ceil.addColorStop(
+    ceiling.addColorStop(
         0,
-        "#080808"
+        "#050505"
     );
 
-    ceil.addColorStop(
+    ceiling.addColorStop(
         1,
-        "#221515"
+        "#211313"
     );
 
     ctx.fillStyle =
-        ceil;
+        ceiling;
 
     ctx.fillRect(
         0,
@@ -2992,9 +2112,11 @@ function render() {
     );
 
 
-    /* 바닥 */
+    /*
+       바닥
+    */
 
-    const floor =
+    let floor =
         ctx.createLinearGradient(
             0,
             canvas.height/2,
@@ -3004,7 +2126,7 @@ function render() {
 
     floor.addColorStop(
         0,
-        "#1c1010"
+        "#241414"
     );
 
     floor.addColorStop(
@@ -3023,29 +2145,23 @@ function render() {
     );
 
 
-    const numRays = 180;
+    const numRays = 240;
 
     const w =
         canvas.width /
         numRays;
 
-    const curFlashRange =
-        flashRange +
-        (Math.random()-.5)*.25;
-
-
-    const fov =
-        Math.PI*.46;
-
-
     const projDist =
         (canvas.width/2) /
         Math.tan(fov/2);
 
+    let zBuffer =
+        new Array(numRays);
 
-    /* =========================
-       RAYCASTING
-    ========================= */
+
+    /*
+       벽
+    */
 
     for (
         let i=0;
@@ -3053,11 +2169,9 @@ function render() {
         i++
     ) {
 
-        const rayAngle =
-            angle -
-            fov/2 +
+        let rayAngle =
+            angle-fov/2 +
             (i/numRays)*fov;
-
 
         let distance = 0;
 
@@ -3070,29 +2184,25 @@ function render() {
 
         while (
             !hit &&
-            distance <
-            curFlashRange
+            distance < flashRange
         ) {
 
-            distance += .025;
+            distance += 0.025;
 
-
-            const rx =
+            let rx =
                 px +
                 Math.cos(rayAngle) *
                 distance;
 
-
-            const ry =
+            let ry =
                 py +
                 Math.sin(rayAngle) *
                 distance;
 
-
-            const tx =
+            let tx =
                 Math.floor(rx);
 
-            const ty =
+            let ty =
                 Math.floor(ry);
 
 
@@ -3104,12 +2214,9 @@ function render() {
             ) {
 
                 hit = true;
-
                 hitType = 1;
 
-            }
-
-            else if (
+            } else if (
                 houseMap[ty][tx] > 0
             ) {
 
@@ -3118,121 +2225,101 @@ function render() {
                 hitType =
                     houseMap[ty][tx];
 
+                wallX =
+                    (
+                        (rx-tx) +
+                        (ry-ty)
+                    ) % 1;
 
-                const fracX =
-                    rx - tx;
-
-                const fracY =
-                    ry - ty;
-
-
-                /*
-                   벽면 좌표를 조금 더
-                   안정적으로 계산
-                */
-
-                if (
-                    Math.abs(
-                        Math.cos(rayAngle)
-                    ) >
-                    Math.abs(
-                        Math.sin(rayAngle)
-                    )
-                ) {
-
-                    wallX =
-                        fracY * 64;
-
-                }
-
-                else {
-
-                    wallX =
-                        fracX * 64;
-
-                }
-
+                if (wallX < 0)
+                    wallX += 1;
             }
-
         }
 
 
-        const correctedDist =
+        let corrected =
             distance *
             Math.cos(
                 rayAngle-angle
             );
 
-
         zBuffer[i] =
-            correctedDist;
+            corrected;
 
 
-        const h =
+        let h =
             Math.min(
                 canvas.height,
                 projDist /
-                (correctedDist+.0001)
+                (corrected+0.0001)
             );
 
 
-        const shade =
+        let shade =
             Math.max(
-                .12,
-                1 -
-                correctedDist /
-                curFlashRange
+                0.15,
+                1-distance/
+                flashRange
             );
 
 
-        const top =
-            (canvas.height-h)/2;
+        /*
+           ★ 얇은 문
+           문을 벽보다 훨씬 좁고
+           어둡게 표현
+        */
 
+        if (hitType === 2) {
 
-        if (hitType === 3) {
+            let doorWidth =
+                Math.max(
+                    2,
+                    w * 0.55
+                );
 
             ctx.fillStyle =
-                `rgba(
-                    230,
-                    190,
-                    60,
-                    ${shade}
-                )`;
+                `rgba(75,35,15,${shade})`;
 
             ctx.fillRect(
-                i*w,
-                top,
-                w+1,
+                i*w +
+                (w-doorWidth)/2,
+                (canvas.height-h)/2,
+                doorWidth,
+                h
+            );
+
+            ctx.fillStyle =
+                `rgba(20,8,4,${shade})`;
+
+            ctx.fillRect(
+                i*w +
+                (w-doorWidth)/2,
+                (canvas.height-h)/2,
+                doorWidth,
+                h
+            );
+
+            ctx.fillStyle =
+                "#8a6818";
+
+            ctx.fillRect(
+                i*w +
+                w/2,
+                (canvas.height-h)/2,
+                Math.max(2,w*.12),
                 h
             );
 
         }
 
-        else if (hitType === 2) {
-
-            ctx.drawImage(
-                doorTex,
-                Math.floor(wallX),
-                0,
-                1,
-                64,
-                i*w,
-                top,
-                w+1,
-                h
-            );
+        else if (hitType === 3) {
 
             ctx.fillStyle =
-                `rgba(
-                    0,
-                    0,
-                    0,
-                    ${1-shade}
-                )`;
+                `rgba(230,190,60,${shade})`;
 
             ctx.fillRect(
                 i*w,
-                top,
+                (canvas.height-h)/2,
                 w+1,
                 h
             );
@@ -3241,61 +2328,41 @@ function render() {
 
         else {
 
-            ctx.drawImage(
-                wallTex,
-                Math.floor(wallX),
-                0,
-                1,
-                64,
-                i*w,
-                top,
-                w+1,
-                h
-            );
-
             ctx.fillStyle =
-                `rgba(
-                    0,
-                    0,
-                    0,
-                    ${1-shade}
-                )`;
+                `rgba(65,35,30,${shade})`;
 
             ctx.fillRect(
                 i*w,
-                top,
+                (canvas.height-h)/2,
                 w+1,
                 h
             );
-
         }
-
     }
 
 
-    /* =========================
-       FURNITURE
-    ========================= */
+    /*
+       가구
+    */
 
     furnitureList.forEach(
         furn => {
 
-            const dx =
+            let dx =
                 furn.x-px;
 
-            const dy =
+            let dy =
                 furn.y-py;
 
-            const dist =
-                Math.hypot(dx,dy);
-
+            let dist =
+                Math.sqrt(
+                    dx*dx+
+                    dy*dy
+                );
 
             let a =
-                Math.atan2(
-                    dy,
-                    dx
-                ) - angle;
-
+                Math.atan2(dy,dx)
+                - angle;
 
             while (a < -Math.PI)
                 a += Math.PI*2;
@@ -3307,22 +2374,20 @@ function render() {
             if (
                 Math.abs(a) <
                 fov/1.8 &&
-                dist < curFlashRange
+                dist < flashRange
             ) {
 
-                const sx =
+                let sx =
                     canvas.width/2 +
                     Math.tan(a) *
                     projDist;
 
-
-                const rayIndex =
+                let rayIndex =
                     Math.floor(
                         sx /
                         canvas.width *
                         numRays
                     );
-
 
                 if (
                     rayIndex >= 0 &&
@@ -3331,56 +2396,47 @@ function render() {
                     zBuffer[rayIndex]
                 ) {
 
-                    const size =
+                    let size =
                         Math.min(
                             180,
                             projDist*.55/dist
                         );
 
-
-                    const centerY =
-                        canvas.height/2 +
-                        size/2;
-
-
                     drawFurniture(
                         furn.type,
                         sx,
-                        centerY,
+                        canvas.height/2+
+                        size/2,
                         size
                     );
-
                 }
-
             }
-
         }
     );
 
 
-    /* =========================
-       ITEMS
-    ========================= */
+    /*
+       아이템
+    */
 
     worldItems.forEach(
         item => {
 
-            const dx =
+            let dx =
                 item.x-px;
 
-            const dy =
+            let dy =
                 item.y-py;
 
-            const dist =
-                Math.hypot(dx,dy);
-
+            let dist =
+                Math.sqrt(
+                    dx*dx+
+                    dy*dy
+                );
 
             let a =
-                Math.atan2(
-                    dy,
-                    dx
-                ) - angle;
-
+                Math.atan2(dy,dx)
+                - angle;
 
             while (a < -Math.PI)
                 a += Math.PI*2;
@@ -3392,22 +2448,20 @@ function render() {
             if (
                 Math.abs(a) <
                 fov/1.8 &&
-                dist < curFlashRange
+                dist < flashRange
             ) {
 
-                const sx =
+                let sx =
                     canvas.width/2 +
                     Math.tan(a) *
                     projDist;
 
-
-                const rayIndex =
+                let rayIndex =
                     Math.floor(
                         sx /
                         canvas.width *
                         numRays
                     );
-
 
                 if (
                     rayIndex >= 0 &&
@@ -3416,47 +2470,31 @@ function render() {
                     zBuffer[rayIndex]
                 ) {
 
-                    const size =
+                    let size =
                         Math.min(
-                            120,
-                            projDist*.45/dist
+                            100,
+                            projDist*.4/dist
                         );
 
-
-                    const floatY =
-                        Math.sin(
-                            animTimer*2.5
-                        )*5;
-
-
-                    const centerY =
+                    let y =
                         canvas.height/2 +
                         size/3 +
-                        floatY;
+                        Math.sin(
+                            animTimer*2
+                        )*5;
 
-
-                    draw3DItem(
+                    drawItem(
                         item.type,
                         sx,
-                        centerY,
+                        y,
                         size
                     );
-
-
-                    ctx.save();
 
                     ctx.fillStyle =
                         "#fff";
 
                     ctx.font =
-                        `bold ${
-                            Math.max(
-                                11,
-                                Math.floor(
-                                    size/2.2
-                                )
-                            )
-                        }px sans-serif`;
+                        "bold 13px sans-serif";
 
                     ctx.textAlign =
                         "center";
@@ -3464,31 +2502,25 @@ function render() {
                     ctx.shadowColor =
                         "#000";
 
-                    ctx.shadowBlur = 6;
-
+                    ctx.shadowBlur = 5;
 
                     ctx.fillText(
                         item.name +
                         " [R]",
                         sx,
-                        centerY -
-                        size/1.2
+                        y-size
                     );
 
-
-                    ctx.restore();
-
+                    ctx.shadowBlur = 0;
                 }
-
             }
-
         }
     );
 
 
-    /* =========================
-       GHOSTS
-    ========================= */
+    /*
+       귀신
+    */
 
     ghosts.forEach(
         g => {
@@ -3496,23 +2528,21 @@ function render() {
             if (g.hp <= 0)
                 return;
 
-
-            const dx =
+            let dx =
                 g.x-px;
 
-            const dy =
+            let dy =
                 g.y-py;
 
-            const dist =
-                Math.hypot(dx,dy);
-
+            let dist =
+                Math.sqrt(
+                    dx*dx+
+                    dy*dy
+                );
 
             let a =
-                Math.atan2(
-                    dy,
-                    dx
-                ) - angle;
-
+                Math.atan2(dy,dx)
+                - angle;
 
             while (a < -Math.PI)
                 a += Math.PI*2;
@@ -3524,22 +2554,20 @@ function render() {
             if (
                 Math.abs(a) <
                 fov/1.8 &&
-                dist < curFlashRange
+                dist < flashRange
             ) {
 
-                const sx =
+                let sx =
                     canvas.width/2 +
                     Math.tan(a) *
                     projDist;
 
-
-                const rayIndex =
+                let rayIndex =
                     Math.floor(
                         sx /
                         canvas.width *
                         numRays
                     );
-
 
                 if (
                     rayIndex >= 0 &&
@@ -3548,29 +2576,21 @@ function render() {
                     zBuffer[rayIndex]
                 ) {
 
-                    const size =
+                    let size =
                         Math.min(
                             220,
                             projDist*.75/dist
                         );
 
-
-                    const centerY =
-                        canvas.height/2 +
-                        size/4;
-
-
                     drawGhost(
                         sx,
-                        centerY,
+                        canvas.height/2+
+                        size/4,
                         size,
                         g.stun
                     );
-
                 }
-
             }
-
         }
     );
 
@@ -3578,12 +2598,11 @@ function render() {
     drawWeapon();
 
     ctx.restore();
-
 }
 
 
 /* =========================
-   GAME LOOP
+   게임 루프
 ========================= */
 
 function gameLoop() {
@@ -3595,7 +2614,6 @@ function gameLoop() {
     requestAnimationFrame(
         gameLoop
     );
-
 }
 
 
@@ -3610,7 +2628,7 @@ gameLoop();
 """
 
 components.html(
-    horror_game_html,
-    height=620,
-    scrolling=False
+horror_game_html,
+height=620,
+scrolling=False
 )
