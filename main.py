@@ -197,21 +197,18 @@ for(let i=0; i<64; i+=16) {
     }
 }
 
-// 다듬어진 문 텍스처 (나무 결, 프레임, 황금 손잡이, 열쇠구멍 디테일)
+// 다듬어진 문 텍스처
 const doorTex = document.createElement('canvas');
 doorTex.width = 64; doorTex.height = 64;
 const dCtx = doorTex.getContext('2d');
-// 외곽 테두리 및 나무 기본색
 dCtx.fillStyle = '#221108'; dCtx.fillRect(0,0,64,64);
 dCtx.fillStyle = '#4a2b16'; dCtx.fillRect(3,3,58,58);
 
-// 세로 나무 나뭇결 텍스처
 dCtx.fillStyle = '#3a200f';
 for(let x=4; x<60; x+=6) {
     dCtx.fillRect(x, 4, 2, 56);
 }
 
-// 입체 몰딩 패널 (상/하단 패널)
 function drawPanel(px, py, pw, ph) {
     dCtx.fillStyle = '#1e0d05'; dCtx.fillRect(px, py, pw, ph);
     dCtx.fillStyle = '#5c381d'; dCtx.fillRect(px+2, py+2, pw-4, ph-4);
@@ -222,13 +219,10 @@ drawPanel(35, 8, 21, 22);
 drawPanel(8, 34, 21, 22);
 drawPanel(35, 34, 21, 22);
 
-// 고풍스러운 금색 문손잡이 및 플레이트
 dCtx.fillStyle = '#8a6818'; dCtx.fillRect(50, 28, 6, 14);
 dCtx.fillStyle = '#ffcc00'; dCtx.fillRect(51, 29, 4, 12);
-// 레버 손잡이
 dCtx.fillStyle = '#ffe066'; dCtx.fillRect(44, 32, 8, 4);
 dCtx.beginPath(); dCtx.arc(53, 31, 3, 0, Math.PI*2); dCtx.fill();
-// 열쇠 구멍
 dCtx.fillStyle = '#000000'; dCtx.fillRect(52, 36, 2, 3);
 
 let houseMap = [];
@@ -301,28 +295,18 @@ function initGame() {
         { x: 18.5, y: 18.5, type: 'key', name: '피묻은 열쇠 (지하 밀실)' }
     ];
 
-    // 방 안을 풍성하게 채워주는 다양한 가구들 오브젝트 목록
     furnitureList = [
-        // 서재 가구
         { x: 1.5, y: 2.5, type: 'bookshelf', name: '오래된 책장' },
         { x: 3.5, y: 1.5, type: 'desk', name: '나무 책상' },
         { x: 3.5, y: 2.2, type: 'chair', name: '낡은 의자' },
-
-        // 응급실/의무실 가구
         { x: 19.5, y: 2.5, type: 'bed', name: '녹슨 침대' },
         { x: 17.5, y: 1.5, type: 'cabinet', name: '약품 보관함' },
-
-        // 복도 배치 가구
         { x: 9.5, y: 10.5, type: 'clock', name: '괘종시계' },
         { x: 11.5, y: 10.5, type: 'chair', name: '복도 의자' },
         { x: 10.5, y: 6.5, type: 'candelabra', name: '촛대' },
         { x: 10.5, y: 14.5, type: 'candelabra', name: '촛대' },
-
-        // 침실 가구
         { x: 1.5, y: 18.5, type: 'bed', name: '핏자국이 남은 침대' },
         { x: 3.5, y: 19.5, type: 'bookshelf', name: '작은 책장' },
-
-        // 지하 밀실 가구
         { x: 19.5, y: 17.5, type: 'cabinet', name: '철제 보관함' },
         { x: 17.5, y: 19.5, type: 'desk', name: '실험용 책상' }
     ];
@@ -401,9 +385,7 @@ window.addEventListener('keydown', e => {
     keys[k] = true;
     
     if (!gameOver) {
-        if (k === 'r') {
-            handleInteract();
-        }
+        if (k === 'r') handleInteract();
         if (e.key === '1' && items.potion > 0) { 
             hp = Math.min(100, hp + 60); items.potion--; 
             playSound('item'); showTmpMsg("💊 체력을 회복했습니다."); updateUI(); 
@@ -566,7 +548,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.fillRect(-size/12, -size/6, size/6, size/1.2);
         ctx.fillRect(size/12, size/4, size/4, size/8);
         ctx.fillRect(size/12, size/2.2, size/4, size/8);
-
     } else if (type === 'knife') {
         ctx.fillStyle = '#888888';
         ctx.beginPath(); ctx.moveTo(0, -size/1.5); ctx.lineTo(size/6, size/6); ctx.lineTo(-size/6, size/6); ctx.closePath(); ctx.fill();
@@ -574,7 +555,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.beginPath(); ctx.moveTo(0, -size/1.5); ctx.lineTo(0, size/6); ctx.lineTo(-size/6, size/6); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#4a2511'; ctx.fillRect(-size/4, size/6, size/2, size/10);
         ctx.fillStyle = '#2b1408'; ctx.fillRect(-size/8, size/6 + size/10, size/4, size/2.5);
-
     } else if (type === 'potion') {
         ctx.fillStyle = 'rgba(200, 200, 255, 0.4)';
         ctx.beginPath(); ctx.arc(0, size/4, size/2.2, 0, Math.PI * 2); ctx.fill();
@@ -583,7 +563,6 @@ function draw3DItem(type, sx, sy, size) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.beginPath(); ctx.arc(-size/6, size/6, size/8, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-size/6, -size/3, size/3, size/6);
-
     } else if (type === 'battery') {
         ctx.fillStyle = '#222222'; ctx.fillRect(-size/3, -size/3, size/1.5, size/1.2);
         ctx.fillStyle = '#ff6600'; ctx.fillRect(-size/3, 0, size/1.5, size/2.4);
@@ -595,50 +574,42 @@ function draw3DItem(type, sx, sy, size) {
     ctx.restore();
 }
 
-// 방 안 가구 렌더링 함수 (3D 캔버스 빌보드 처리)
 function drawFurniture(type, sx, sy, size) {
     ctx.save();
     ctx.translate(sx, sy);
 
-    if (type === 'bookshelf') { // 책장
+    if (type === 'bookshelf') {
         ctx.fillStyle = '#3a200d'; ctx.fillRect(-size/2, -size/1.2, size, size*1.2);
         ctx.fillStyle = '#1e0f06'; ctx.fillRect(-size/2.3, -size/1.3, size/1.15, size*1.1);
-        // 선반 및 책 조각
         ctx.fillStyle = '#4a2c16'; ctx.fillRect(-size/2.3, -size/2, size/1.15, size/12);
         ctx.fillRect(-size/2.3, 0, size/1.15, size/12);
         ctx.fillStyle = '#aa2222'; ctx.fillRect(-size/2.6, -size/1.25, size/8, size/3);
         ctx.fillStyle = '#2288aa'; ctx.fillRect(-size/4, -size/1.25, size/7, size/3.2);
         ctx.fillStyle = '#ccaa22'; ctx.fillRect(0, -size/2.3, size/6, size/3);
-
-    } else if (type === 'desk') { // 책상
+    } else if (type === 'desk') {
         ctx.fillStyle = '#422817'; ctx.fillRect(-size/1.3, -size/4, size*1.5, size/6);
         ctx.fillStyle = '#2b180d';
         ctx.fillRect(-size/1.4, -size/8, size/8, size/1.5);
         ctx.fillRect(size/1.6, -size/8, size/8, size/1.5);
-
-    } else if (type === 'chair') { // 의자
+    } else if (type === 'chair') {
         ctx.fillStyle = '#3a200d'; ctx.fillRect(-size/4, -size/1.2, size/2, size/1.8);
         ctx.fillStyle = '#543118'; ctx.fillRect(-size/3, -size/3, size/1.5, size/8);
         ctx.fillStyle = '#221207';
         ctx.fillRect(-size/3, -size/4, size/10, size/2);
         ctx.fillRect(size/3 - size/10, -size/4, size/10, size/2);
-
-    } else if (type === 'bed') { // 침대
+    } else if (type === 'bed') {
         ctx.fillStyle = '#4a2e1b'; ctx.fillRect(-size/1.2, -size/6, size*1.6, size/2);
         ctx.fillStyle = '#aaaaaa'; ctx.fillRect(-size/1.1, -size/4, size*1.4, size/4);
-        ctx.fillStyle = '#e6e6e6'; ctx.fillRect(-size/1.1, -size/3, size/2.5, size/5); // 베개
-
-    } else if (type === 'cabinet') { // 캐비닛
+        ctx.fillStyle = '#e6e6e6'; ctx.fillRect(-size/1.1, -size/3, size/2.5, size/5);
+    } else if (type === 'cabinet') {
         ctx.fillStyle = '#333b42'; ctx.fillRect(-size/3, -size/1.1, size/1.5, size*1.1);
         ctx.fillStyle = '#1e2327'; ctx.fillRect(-size/3.5, -size/1.15, size/1.8, size/12);
         ctx.fillStyle = '#666'; ctx.fillRect(0, -size/2, size/12, size/8);
-
-    } else if (type === 'clock') { // 괘종시계
+    } else if (type === 'clock') {
         ctx.fillStyle = '#2d1a0e'; ctx.fillRect(-size/4, -size, size/2, size*1.3);
         ctx.fillStyle = '#ffeecc'; ctx.beginPath(); ctx.arc(0, -size/1.3, size/6, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#ffaa00'; ctx.beginPath(); ctx.arc(0, -size/3, size/12, 0, Math.PI*2); ctx.fill();
-
-    } else if (type === 'candelabra') { // 촛대
+    } else if (type === 'candelabra') {
         ctx.fillStyle = '#887711'; ctx.fillRect(-size/16, -size/2, size/8, size/1.2);
         ctx.fillStyle = '#ffaa00';
         ctx.beginPath(); ctx.arc(0, -size/1.8, size/8, 0, Math.PI*2); ctx.fill();
@@ -646,6 +617,51 @@ function drawFurniture(type, sx, sy, size) {
         let flicker = Math.sin(animTimer * 10) * 2;
         ctx.beginPath(); ctx.arc(0, -size/1.4 + flicker, size/12, 0, Math.PI*2); ctx.fill();
     }
+
+    ctx.restore();
+}
+
+function drawGhost(sx, sy, size, stun) {
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    let alpha = stun > 0 ? 0.4 : 0.85;
+    ctx.fillStyle = `rgba(200, 220, 255, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(0, -size/2, size/3, Math.PI, 0, false);
+    ctx.lineTo(size/3, size/2);
+    ctx.lineTo(-size/3, size/2);
+    ctx.closePath();
+    ctx.fill();
+
+    // 원혼 눈
+    ctx.fillStyle = stun > 0 ? '#00ffff' : '#ff0000';
+    ctx.beginPath(); ctx.arc(-size/8, -size/1.8, size/12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(size/8, -size/1.8, size/12, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
+}
+
+function drawWeapon() {
+    if (!items.knife) return;
+
+    ctx.save();
+    let swingOffset = isAttacking > 0 ? (10 - isAttacking) * 8 : 0;
+    let weaponX = canvas.width - 150 - swingOffset;
+    let weaponY = canvas.height - 100 + swingOffset;
+
+    ctx.translate(weaponX, weaponY);
+    ctx.rotate(-Math.PI / 4 + (swingOffset * 0.05));
+
+    // 검 칼날 및 자루
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillRect(-10, -120, 20, 100);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, -120, 10, 100);
+    ctx.fillStyle = '#4a2511';
+    ctx.fillRect(-20, -20, 40, 10);
+    ctx.fillStyle = '#2b1408';
+    ctx.fillRect(-8, -10, 16, 40);
 
     ctx.restore();
 }
@@ -667,7 +683,6 @@ function render() {
     const numRays = 160;
     const w = canvas.width / numRays;
     let curFlashRange = flashRange + (Math.random() - 0.5) * 0.2;
-
     let projDist = (canvas.width / 2) / Math.tan(fov / 2);
 
     for (let i = 0; i < numRays; i++) {
@@ -710,7 +725,7 @@ function render() {
         }
     }
 
-    // 방 내부 가구 렌더링
+    // 가구 렌더링
     furnitureList.forEach(furn => {
         let idxX = furn.x - px, idxY = furn.y - py;
         let dist = Math.sqrt(idxX*idxX + idxY*idxY);
@@ -760,7 +775,7 @@ function render() {
         }
     });
 
-    // 원혼(적) 렌더링
+    // 원혼 렌더링
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -772,57 +787,32 @@ function render() {
         if (Math.abs(gAngle) < fov / 1.8 && gDist < curFlashRange) {
             let sx = (canvas.width / 2) + Math.tan(gAngle) * projDist;
             let rayIndex = Math.floor((sx / canvas.width) * numRays);
-            
+
             if (rayIndex >= 0 && rayIndex < numRays && gDist < zBuffer[rayIndex]) {
-                let size = Math.min(450, projDist * 1.1 / gDist);
-                let topY = canvas.height / 2 - size / 2;
-                let wobble = Math.sin(animTimer * 4) * 6;
-
-                ctx.save();
-                ctx.fillStyle = g.stun > 0 ? '#00ffff' : 'rgba(15,2,4,0.95)';
-                ctx.beginPath();
-                ctx.ellipse(sx + wobble, topY + size/2, size/4, size/2.2, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = g.stun > 0 ? '#ffffff' : '#ff0000';
-                ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.arc(sx + wobble - size/10, topY + size/3, size/20, 0, Math.PI * 2);
-                ctx.arc(sx + wobble + size/10, topY + size/3, size/20, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
+                let size = Math.min(220, projDist * 0.75 / gDist);
+                let centerY = canvas.height / 2 + size/4;
+                drawGhost(sx, centerY, size, g.stun);
             }
         }
     });
 
-    if (items.knife) {
-        ctx.save();
-        let attackOffset = isAttacking * 12;
-        ctx.fillStyle = '#cccccc';
-        ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.moveTo(canvas.width/2 + 90 - attackOffset, canvas.height - attackOffset);
-        ctx.lineTo(canvas.width/2 + 150 - attackOffset, canvas.height - 140 - attackOffset);
-        ctx.lineTo(canvas.width/2 + 175 - attackOffset, canvas.height - 110 - attackOffset);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    }
+    // 플레이어 무기 렌더링
+    drawWeapon();
 
     ctx.restore();
 }
 
-function loop() {
+function gameLoop() {
     update();
     render();
-    requestAnimationFrame(loop);
+    requestAnimationFrame(gameLoop);
 }
 
 initGame();
-loop();
+gameLoop();
 </script>
 </body>
 </html>
 """
 
-components.html(horror_game_html, height=610)
+components.html(horror_game_html, height=620)
