@@ -68,7 +68,7 @@ horror_game_html = """
         }
     </style>
 </head>
-<body>
+<body onclick="window.focus();">
     <div id="glitch-overlay"></div>
 
     <div id="ui">
@@ -85,7 +85,7 @@ horror_game_html = """
 
     <div id="room-info">
         <div style="color:#ff3333; font-weight:bold;" id="current-room-name">현재 위치: 중앙 복도</div>
-        <div>문이나 아이템 근처에서 [R] 키를 누르세요</div>
+        <div>화면을 클릭하여 포커스를 맞춘 후 조작하세요</div>
     </div>
     
     <div id="inventory">
@@ -95,7 +95,7 @@ horror_game_html = """
         <div class="slot" id="slot4"><span class="slot-key">[4]</span>탈출열쇠<br><span id="cnt-key">미획득</span></div>
     </div>
 
-    <div id="msg">방향키(←/→) 또는 드래그로 시점을 조절하세요</div>
+    <div id="msg">화면을 한 번 클릭하면 키보드 조작이 활성화됩니다</div>
     
     <div id="jumpscare">
         <div id="scare-face">
@@ -110,7 +110,7 @@ horror_game_html = """
         <button id="restart-btn" onclick="resetGame()">다시 도전하기</button>
     </div>
     
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" tabindex="0"></canvas>
 
 <script>
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -197,7 +197,7 @@ for(let i=0; i<64; i+=16) {
     }
 }
 
-// 다듬어진 문 텍스처
+// 문 텍스처
 const doorTex = document.createElement('canvas');
 doorTex.width = 64; doorTex.height = 64;
 const dCtx = doorTex.getContext('2d');
@@ -384,6 +384,11 @@ window.addEventListener('keydown', e => {
     let k = parseKey(e.key);
     keys[k] = true;
     
+    // 키보드로 인한 웹 페이지 스크롤 방지
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) {
+        e.preventDefault();
+    }
+
     if (!gameOver) {
         if (k === 'r') handleInteract();
         if (e.key === '1' && items.potion > 0) { 
@@ -409,6 +414,7 @@ let lastMouseX = 0;
 
 canvas.addEventListener('mousedown', e => {
     initAudio();
+    canvas.focus();
     isMouseDown = true;
     lastMouseX = e.clientX;
     
@@ -421,7 +427,7 @@ canvas.addEventListener('mousedown', e => {
 
 window.addEventListener('mouseup', () => { isMouseDown = false; });
 
-document.addEventListener('mousemove', e => {
+window.addEventListener('mousemove', e => {
     if (isMouseDown) {
         let dx = e.clientX - lastMouseX;
         angle += dx * 0.006;
@@ -479,8 +485,8 @@ function update() {
     animTimer += 0.05;
     if (screenShake > 0) screenShake--;
 
-    if (keys['left']) angle -= 0.045;
-    if (keys['right']) angle += 0.045;
+    if (keys['left'] || keys['a']) angle -= 0.045;
+    if (keys['right'] || keys['d']) angle += 0.045;
 
     let speed = keys['e'] && stamina >= 0.5 ? 0.065 : 0.038;
     if (keys['e'] && (keys['w']||keys['s']||keys['a']||keys['d'])) stamina = Math.max(0, stamina - 0.4);
@@ -489,8 +495,6 @@ function update() {
     let dx = 0, dy = 0;
     if (keys['w']) { dx += Math.cos(angle) * speed; dy += Math.sin(angle) * speed; }
     if (keys['s']) { dx -= Math.cos(angle) * speed; dy -= Math.sin(angle) * speed; }
-    if (keys['a']) { dx += Math.sin(angle) * speed; dy -= Math.cos(angle) * speed; }
-    if (keys['d']) { dx -= Math.sin(angle) * speed; dy += Math.cos(angle) * speed; }
 
     const margin = 0.25;
     if (!isSolid(px + dx + Math.sign(dx)*margin, py)) px += dx;
@@ -634,7 +638,6 @@ function drawGhost(sx, sy, size, stun) {
     ctx.closePath();
     ctx.fill();
 
-    // 원혼 눈
     ctx.fillStyle = stun > 0 ? '#00ffff' : '#ff0000';
     ctx.beginPath(); ctx.arc(-size/8, -size/1.8, size/12, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(size/8, -size/1.8, size/12, 0, Math.PI*2); ctx.fill();
@@ -653,7 +656,6 @@ function drawWeapon() {
     ctx.translate(weaponX, weaponY);
     ctx.rotate(-Math.PI / 4 + (swingOffset * 0.05));
 
-    // 검 칼날 및 자루
     ctx.fillStyle = '#aaaaaa';
     ctx.fillRect(-10, -120, 20, 100);
     ctx.fillStyle = '#ffffff';
@@ -725,7 +727,6 @@ function render() {
         }
     }
 
-    // 가구 렌더링
     furnitureList.forEach(furn => {
         let idxX = furn.x - px, idxY = furn.y - py;
         let dist = Math.sqrt(idxX*idxX + idxY*idxY);
@@ -745,7 +746,6 @@ function render() {
         }
     });
 
-    // 아이템 렌더링
     worldItems.forEach(item => {
         let idxX = item.x - px, idxY = item.y - py;
         let dist = Math.sqrt(idxX*idxX + idxY*idxY);
@@ -775,7 +775,6 @@ function render() {
         }
     });
 
-    // 원혼 렌더링
     ghosts.forEach(g => {
         if (g.hp <= 0) return;
         let gdx = g.x - px, gdy = g.y - py;
@@ -796,7 +795,6 @@ function render() {
         }
     });
 
-    // 플레이어 무기 렌더링
     drawWeapon();
 
     ctx.restore();
