@@ -66,15 +66,8 @@ html, body {
     transition: width 0.1s linear;
 }
 
-#hp {
-    background: #e74c3c;
-    width: 100%;
-}
-
-#stamina {
-    background: #2ecc71;
-    width: 100%;
-}
+#hp { background: #e74c3c; width: 100%; }
+#stamina { background: #2ecc71; width: 100%; }
 
 .statusText {
     font-weight: bold;
@@ -225,11 +218,10 @@ canvas.width = 900;
 canvas.height = 600;
 
 const mapCanvas = document.getElementById("minimap");
-const mapCtx = mapCanvas.getContext("2d");
+mapCtx = mapCanvas.getContext("2d");
 mapCanvas.width = 200;
 mapCanvas.height = 175;
 
-// 0: 복도, 1: 벽, 2: 문, 3: 출구
 const houseMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
@@ -241,7 +233,7 @@ const houseMap = [
     [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1],
     [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1],
     [1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,0,1,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3], // <--- 출구
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
     [1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,0,1,0,1],
     [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1],
     [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1],
@@ -263,12 +255,13 @@ let gameOver = false;
 let items = { potion: 1, battery: 1, talisman: 1, key: false };
 let ghost = { x: 16.5, y: 16.5, stun: 0 };
 let worldItems = [
-    { x: 2.5, y: 2.5, type: "potion" },
-    { x: 16.5, y: 2.5, type: "battery" },
-    { x: 16.5, y: 16.5, type: "key" }
+    { x: 2.5, y: 2.5, type: "potion", icon: "💊" },
+    { x: 16.5, y: 2.5, type: "battery", icon: "🔋" },
+    { x: 16.5, y: 16.5, type: "key", icon: "🔑" }
 ];
 
-// 마우스 드래그로 시점 조절
+let depthBuffer = new Array(canvas.width);
+
 let isDragging = false;
 let prevMouseX = 0;
 
@@ -311,9 +304,9 @@ function initGame() {
 
     ghost = { x: 16.5, y: 16.5, stun: 0 };
     worldItems = [
-        { x: 2.5, y: 2.5, type: "potion" },
-        { x: 16.5, y: 2.5, type: "battery" },
-        { x: 16.5, y: 16.5, type: "key" }
+        { x: 2.5, y: 2.5, type: "potion", icon: "💊" },
+        { x: 16.5, y: 2.5, type: "battery", icon: "🔋" },
+        { x: 16.5, y: 16.5, type: "key", icon: "🔑" }
     ];
 
     document.getElementById("gameover").style.display = "none";
@@ -411,6 +404,13 @@ function interact() {
     }
 }
 
+function isSolid(x, y) {
+    let gx = Math.floor(x);
+    let gy = Math.floor(y);
+    if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return true;
+    return houseMap[gy][gx] === 1 || houseMap[gy][gx] === 2;
+}
+
 function update() {
     if (gameOver) return;
 
@@ -433,10 +433,10 @@ function update() {
     let nx = px + dx;
     let ny = py + dy;
 
-    if (houseMap[Math.floor(py)][Math.floor(nx)] !== 1) px = nx;
-    if (houseMap[Math.floor(ny)][Math.floor(px)] !== 1) py = ny;
+    if (!isSolid(nx, py)) px = nx;
+    if (!isSolid(px, ny)) py = ny;
 
-    // 귀신 AI
+    // 귀신 AI (벽 충돌 알고리즘 개선)
     if (ghost.stun > 0) {
         ghost.stun--;
     } else {
@@ -444,8 +444,17 @@ function update() {
         let gdy = py - ghost.y;
         let dist = Math.sqrt(gdx*gdx + gdy*gdy);
         if (dist > 0.5) {
-            ghost.x += (gdx / dist) * 0.018;
-            ghost.y += (gdy / dist) * 0.018;
+            let ghostSpeed = 0.022;
+            let moveX = (gdx / dist) * ghostSpeed;
+            let moveY = (gdy / dist) * ghostSpeed;
+
+            // 벽을 통과하지 못하도록 미끄러짐 방지 처리
+            if (!isSolid(ghost.x + moveX, ghost.y)) {
+                ghost.x += moveX;
+            }
+            if (!isSolid(ghost.x, ghost.y + moveY)) {
+                ghost.y += moveY;
+            }
         }
         if (dist < 0.7) {
             hp -= 0.6;
@@ -458,12 +467,11 @@ function update() {
     updateUI();
 }
 
-// 3D 레이캐스팅 렌더링
 function render3D() {
     ctx.fillStyle = "#050505";
-    ctx.fillRect(0, 0, canvas.width, canvas.height / 2); // 천장
+    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
     ctx.fillStyle = "#111";
-    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2); // 바닥
+    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
     const numRays = canvas.width;
     const halfFov = fov / 2;
@@ -491,25 +499,59 @@ function render3D() {
             }
         }
 
-        // 어질러짐 방지용 거리 보정
         let correctedDist = distance * Math.cos(rayAngle - angle);
+        depthBuffer[i] = correctedDist;
+
         let wallHeight = Math.min(canvas.height, (canvas.height / correctedDist));
 
         let color = "#333333";
-        if (wallType === 1) color = "#4a4a4a"; // 벽
-        if (wallType === 2) color = "#8b5a2b"; // 문
-        if (wallType === 3) color = "#f1c40f"; // 출구
+        if (wallType === 1) color = "#4a4a4a";
+        if (wallType === 2) color = "#8b5a2b";
+        if (wallType === 3) color = "#f1c40f";
 
-        // 어두운 명암 조명 효과 (거리 비례)
         let shade = Math.max(0, 1 - correctedDist / 12);
         ctx.fillStyle = color;
         ctx.globalAlpha = shade;
         ctx.fillRect(i, (canvas.height - wallHeight) / 2, 1, wallHeight);
         ctx.globalAlpha = 1.0;
     }
+
+    // 3D 공간에 아이템 및 귀신 스프라이트 투영
+    let sprites = [];
+
+    for (let item of worldItems) {
+        sprites.push({ x: item.x, y: item.y, text: item.icon, type: "item" });
+    }
+    sprites.push({ x: ghost.x, y: ghost.y, text: "👻", type: "ghost" });
+
+    sprites.forEach(s => {
+        let dx = s.x - px;
+        let dy = s.y - py;
+        let spriteDist = Math.sqrt(dx*dx + dy*dy);
+
+        let spriteAngle = Math.atan2(dy, dx) - angle;
+        while (spriteAngle < -Math.PI) spriteAngle += Math.PI * 2;
+        while (spriteAngle > Math.PI) spriteAngle -= Math.PI * 2;
+
+        if (Math.abs(spriteAngle) < fov) {
+            let screenX = (canvas.width / 2) + Math.tan(spriteAngle) * (canvas.width / (2 * Math.tan(fov / 2)));
+            let size = canvas.height / (spriteDist * Math.cos(spriteAngle));
+
+            let colX = Math.floor(screenX);
+            if (colX >= 0 && colX < canvas.width && spriteDist < depthBuffer[colX]) {
+                ctx.save();
+                ctx.font = `${Math.max(12, Math.floor(size * 0.4))}px sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let alpha = Math.max(0, 1 - spriteDist / 12);
+                ctx.globalAlpha = alpha;
+                ctx.fillText(s.text, screenX, canvas.height / 2);
+                ctx.restore();
+            }
+        }
+    });
 }
 
-// 미니맵 렌더링
 function renderMinimap() {
     mapCtx.fillStyle = "#000";
     mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
@@ -525,17 +567,14 @@ function renderMinimap() {
         }
     }
 
-    // 아이템 위치 표시
     mapCtx.fillStyle = "#f1c40f";
     for (let item of worldItems) {
         mapCtx.fillRect(item.x * size - 1.5, item.y * size - 1.5, 3, 3);
     }
 
-    // 귀신 위치 표시
     mapCtx.fillStyle = "#e74c3c";
     mapCtx.fillRect(ghost.x * size - 2, ghost.y * size - 2, 4, 4);
 
-    // 플레이어 표시
     mapCtx.fillStyle = "#2ecc71";
     mapCtx.beginPath();
     mapCtx.arc(px * size, py * size, 3, 0, Math.PI * 2);
